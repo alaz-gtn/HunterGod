@@ -2,7 +2,7 @@
 
 Quality of life for hunters in **WoW Forever**. HunterGod keeps an eye on the things a hunter forgets: how far the target is, which aspect you're in, how much ammo and pet food you have left, and where to buy more.
 
-Everything is set up from the **minimap button** (or `/huntergod`), and every display can be dragged wherever you want it.
+Everything is set up from the **minimap button** (or `/huntergod`) in one options window, with a live preview of the range number, and every display can be dragged wherever you want it.
 
 ## Range to your target
 
@@ -78,7 +78,7 @@ HunterGod is licensed under the GNU GPL v3 or later.
 
 ## Español
 
-**HunterGod** son mejoras para cazadores en WoW Forever. Todo se configura desde el **botón del minimapa** (o `/huntergod`), y cada aviso se puede arrastrar donde quieras.
+**HunterGod** son mejoras para cazadores en WoW Forever. Todo se configura desde el **botón del minimapa** (o `/huntergod`) en una ventana de opciones con vista previa de la distancia, y cada aviso se puede arrastrar donde quieras.
 
 - **Aviso de cuerpo a cuerpo:** un CUERPO A CUERPO rojo que parpadea cuando estás a melee de tu objetivo; se puede mover.
 - **Aviso de agro:** AGRO 92% bajo la placa del objetivo cuando estás a punto de quitarle el bicho a tu mascota (desde el 90%, o desde donde lo pongas), y ¡TIENES EL AGRO! cuando se lo quitas. Solo con la mascota fuera o en grupo.
