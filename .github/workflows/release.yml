@@ -1,0 +1,30 @@
+name: Release
+
+# Pushing a tag vX.Y.Z (the version in HunterGod.toc) tests the addon and uploads it to CurseForge
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test in English and Spanish
+        run: |
+          pip install lupa
+          python -I tools/test_addon.py HunterGod enUS
+          python -I tools/test_addon.py HunterGod esES
+
+      - name: Upload to CurseForge
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+        run: python -I tools/publish.py

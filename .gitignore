@@ -1,0 +1,4 @@
+# Zips are built from the code: locally by tools/build_zip.py, on GitHub by the release workflow
+release/
+*.zip
+__pycache__/
