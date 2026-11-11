@@ -133,11 +133,14 @@ local function Melee(unit, close)
 	return melee
 end
 
--- Within one of the steps up to Auto Shot's reach
-local function WithinReach(unit)
-	local reach = AutoShotReach()
+-- Auto Shot's own minimum ends a little past the 8 yard check (a target at 8-10 yards can be
+-- too close for it), never as far as this
+local DEAD_LIMIT = 15
+
+-- Within one of the short steps: with Auto Shot saying no, the target is too close for it
+local function TooClose(unit)
 	for _, step in ipairs(steps) do
-		if step[1] <= reach and CheckStep(step, unit) then return true end
+		if step[1] <= DEAD_LIMIT and CheckStep(step, unit) then return true end
 	end
 	return false
 end
@@ -150,10 +153,10 @@ function ns.RangeState(unit)
 	local melee = Melee(unit, close)
 	if melee then return "melee" end
 	if close then return "dead" end
-	-- Auto Shot also says no when the target is too close. In combat the game may not answer
-	-- the close check, so a step within Auto Shot's reach that says yes means the dead zone
-	-- (a big mob's edge is nearer than it looks), not out of range
-	if ranged == false and close == nil and WithinReach(unit) then return "dead" end
+	-- Auto Shot also says no when the target is too close, a bit past the 8 yard check, or
+	-- when the game doesn't answer that check in combat: a short step that says yes means
+	-- the dead zone, not out of range
+	if ranged == false and TooClose(unit) then return "dead" end
 	if ranged == nil and melee == nil and close == nil then return nil end
 	return "out"
 end
@@ -161,10 +164,23 @@ end
 -- The distance to the unit in yards for its state: low, high (high is nil past the last step)
 function ns.RangeDistance(unit, state)
 	if state == "melee" then return 0, MELEE end
-	if state == "dead" then return MELEE, AUTO_SHOT_MIN end
 	local reach = AutoShotReach()
 	local low, high = reach, nil
-	if state == "ranged" then low, high = AUTO_SHOT_MIN, reach end
+	if state == "ranged" then
+		low, high = AUTO_SHOT_MIN, reach
+	elseif state == "dead" then
+		low = MELEE -- how far past melee, the steps say: 5-8, or 8-10 at the edge of Auto Shot's minimum
+	else
+		-- Auto Shot can say no for more than distance (the ground in between, a hill): a step
+		-- within its reach that says yes is the distance, rather than its reach and beyond
+		local below = 0
+		for _, step in ipairs(steps) do
+			if step[1] > reach then break end
+			local v = CheckStep(step, unit)
+			if v then return below, step[1] end
+			if v == false then below = step[1] end
+		end
+	end
 	for _, step in ipairs(steps) do
 		local yards = step[1]
 		if yards > low and (not high or yards < high) then

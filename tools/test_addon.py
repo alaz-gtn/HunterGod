@@ -113,7 +113,7 @@ function Uncache(ns, yards) for _, step in ipairs(ns.RANGE_ITEMS) do if step[1] 
 C_Spell = {
   IsSpellInRange = function(spell)
     if G.secretRange then return SECRET end
-    if spell == "Auto Shot" then return G.dist >= 8 and G.dist <= G.reach end
+    if spell == "Auto Shot" then return not G.autoBlocked and G.dist >= (G.autoMin or 8) and G.dist <= G.reach end
     if spell == "Raptor Strike" or spell == "Wing Clip" then return G.meleeLies or G.dist <= 5 end
   end,
   GetSpellInfo = function(spell) if spell == "Auto Shot" then return { name = spell, minRange = 8, maxRange = G.reach } end end,
@@ -505,11 +505,22 @@ S.secretRange = True
 check(range_at(27) is None, "hidden values in combat: nothing shown")
 S.secretRange = False
 S.secretInteract = True
-check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2),
+check(range_at(6) == f"5-10 {yd}" and colour()[:2] == (1, 0.2),
       f"too close for Auto Shot with the close check hidden in combat: dead zone, not out of range: {rng.text.text}")
 check(range_at(38) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6), f"and really out of range is still out: {rng.text.text}")
 check(range_at(20) == f"15-20 {yd}" and colour()[:2] == (0.3, 1), f"in range as before: {rng.text.text}")
 S.secretInteract = False
+# What the game answered in Forever: Auto Shot no, melee no, 8 no, 10 yes
+S.autoMin = 10
+check(range_at(9) == f"8-10 {yd}" and colour()[:2] == (1, 0.2),
+      f"at 9 yd, past the 8 yard check but too close for Auto Shot: dead zone, not 35-40: {rng.text.text}")
+check(range_at(12) == f"10-15 {yd}" and colour()[:2] == (0.3, 1), f"and at 12 yd it shoots again: {rng.text.text}")
+S.autoMin = None
+S.autoBlocked = True
+check(range_at(18) == f"15-20 {yd}" and colour()[:2] == (0.6, 0.6),
+      f"Auto Shot can't fire at 18 yd: grey, with the real distance, not 35-40: {rng.text.text}")
+check(range_at(38) == f"35-40 {yd}", f"and far away is still 35-40: {rng.text.text}")
+S.autoBlocked = False
 S.target = None
 check(range_at(27) is None, "no target: nothing shown")
 S.target = lua.table(hostile=False)

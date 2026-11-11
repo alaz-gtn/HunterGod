@@ -1,3 +1,8 @@
+# 1.0.5
+
+- At 8-10 yards Auto Shot can still be too close, past the game's 8 yard check: the range showed out of range at 40 yd there, and now shows the dead zone.
+- When Auto Shot can't fire for another reason (a hill in between), the range shows the real distance in grey instead of 40 yd.
+
 # 1.0.4
 
 - Too close for Auto Shot in combat (easy with a big mob) showed out of range at about 40 yd: it now shows the dead zone.
