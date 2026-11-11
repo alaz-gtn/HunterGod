@@ -24,7 +24,7 @@ version = re.search(r"^## Version:\s*(\S+)", toc, re.M).group(1)
 interface = int(re.search(r"^## Interface:\s*(\d+)", toc, re.M).group(1))
 game = f"{interface // 10000}.{interface // 100 % 100}.{interface % 100}"  # 16001 is 1.60.1
 
-tag = os.environ.get("GITHUB_REF_NAME")
+tag = os.environ.get("GITHUB_REF_NAME") if os.environ.get("GITHUB_REF_TYPE") == "tag" else None
 if tag and tag != f"v{version}":
     sys.exit(f"La etiqueta {tag} no coincide con la versión del TOC ({version})")
 
@@ -48,7 +48,11 @@ if "--dry-run" in sys.argv:
     print(zip_path)
     sys.exit()
 
-token = os.environ.get("CF_API_KEY") or sys.exit("Falta la clave de CurseForge en CF_API_KEY")
+token = (os.environ.get("CF_API_KEY") or "").strip()  # a pasted key may bring a space or a line break
+if not re.fullmatch(r"[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", token):
+    # Says what is wrong with the key without showing it
+    sys.exit(f"CF_API_KEY no tiene la forma de una clave de CurseForge (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx): "
+             f"tiene {len(token)} caracteres y {token.count('-')} guiones")
 
 
 def call(path, body=None, content_type=None):
