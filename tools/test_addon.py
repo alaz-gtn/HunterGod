@@ -1198,6 +1198,14 @@ rng.mover.scripts.OnDragStop(rng.mover)
 check(list(db.positions["range"].values()) == ["TOPLEFT", "TOPLEFT", 300, -200], "the new place is saved")
 sad.point = lua.table("CENTER", G.UIParent, "CENTER", 10, 20)
 sad.mover.scripts.OnDragStop(sad.mover)
+thr.point = lua.table("CENTER", G.UIParent, "CENTER", 50, -300)  # being dragged
+ns.UpdateThreat()
+ns.UpdateThreat()
+check(thr.point[4] == 50 and thr.point[5] == -300, "the aggro warning stays where you drag it, between updates")
+thr.mover.scripts.OnDragStop(thr.mover)
+check(list(db.positions["threat"].values()) == ["CENTER", "CENTER", 50, -300], "and its new place is saved")
+check(abs(thr.defaultPoint[4] - rng.defaultPoint[4]) >= 44,
+      f"its default place is clear of the range display's box ({thr.defaultPoint[4]} vs {rng.defaultPoint[4]})")
 check(db.positions["happiness"] is not None, "NOT HAPPY moved off the portrait: it stays where you put it")
 slash("lock")
 check(not ns.unlocked and not asp.shown and not ammo.shown and not bar.shown and not growl.shown and not toast.shown

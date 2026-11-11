@@ -450,15 +450,20 @@ function ns.UpdateThreat()
 	if not text then
 		threat.blink:Stop()
 		threat:Hide()
+		threat.anchor = nil -- placed again when it shows
 		return
 	end
+	-- Placed only when where it hangs changes: placing it on every update undid a drag
 	local plate = not ns.unlocked and C_NamePlate and C_NamePlate.GetNamePlateForUnit
 		and C_NamePlate.GetNamePlateForUnit("target")
-	if plate then
-		threat:ClearAllPoints()
-		threat:SetPoint("TOP", plate, "BOTTOM", 0, -2)
-	else
-		ns.PlaceFrame(threat)
+	if threat.anchor ~= (plate or "free") then
+		threat.anchor = plate or "free"
+		if plate then
+			threat:ClearAllPoints()
+			threat:SetPoint("TOP", plate, "BOTTOM", 0, -2)
+		else
+			ns.PlaceFrame(threat)
+		end
 	end
 	threat.text:SetText(text)
 	if pulled then
@@ -490,7 +495,7 @@ driver:SetScript("OnEvent", function(self, event)
 	self:RegisterEvent("PLAYER_TARGET_CHANGED")
 	ns.Movable(frame, "range", { "CENTER", "CENTER", 0, -140 }, L.TAB_RANGE)
 	ns.Movable(melee, "melee", { "CENTER", "CENTER", 0, 60 }, L.MELEE_WARNING)
-	ns.Movable(threat, "threat", { "CENTER", "CENTER", 0, -175 }, L.THREAT_NAME)
+	ns.Movable(threat, "threat", { "CENTER", "CENTER", 0, -200 }, L.THREAT_NAME) -- clear of the range's box
 	ns.StyleRange()
 	table.insert(ns.refreshers, function()
 		Anchor(TargetPlate())
