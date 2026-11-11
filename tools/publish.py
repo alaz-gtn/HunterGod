@@ -49,10 +49,8 @@ if "--dry-run" in sys.argv:
     sys.exit()
 
 token = (os.environ.get("CF_API_KEY") or "").strip()  # a pasted key may bring a space or a line break
-if not re.fullmatch(r"[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", token):
-    # Says what is wrong with the key without showing it
-    sys.exit(f"CF_API_KEY no tiene la forma de una clave de CurseForge (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx): "
-             f"tiene {len(token)} caracteres y {token.count('-')} guiones")
+if not token:
+    sys.exit("Falta la clave de CurseForge en CF_API_KEY")
 
 
 def call(path, body=None, content_type=None):
@@ -63,7 +61,9 @@ def call(path, body=None, content_type=None):
         with urllib.request.urlopen(request) as response:
             return json.load(response)
     except urllib.error.HTTPError as e:
-        sys.exit(f"CurseForge respondió {e.code} a {path}: {e.read().decode(errors='replace')}")
+        # The key's length helps tell a bad paste, without showing the key
+        sys.exit(f"CurseForge respondió {e.code} a {path} (clave de {len(token)} caracteres): "
+                 f"{e.read().decode(errors='replace')}")
 
 
 ids = [v["id"] for v in call("/game/versions") if v["name"] == game]
