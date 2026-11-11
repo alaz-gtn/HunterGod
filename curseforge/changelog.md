@@ -1,3 +1,7 @@
+# 1.0.4
+
+- Too close for Auto Shot in combat (easy with a big mob) showed out of range at about 40 yd: it now shows the dead zone.
+
 # 1.0.3
 
 - The AGGRO warning can be dragged while the displays are unlocked (it went back to its place), and it starts clear of the range display.

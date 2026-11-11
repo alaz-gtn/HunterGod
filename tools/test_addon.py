@@ -60,7 +60,7 @@ UnitCanAttack = function() return G.target and G.target.hostile end
 UnitIsDead = function() return false end
 UnitAffectingCombat = function() return G.combat end
 InCombatLockdown = function() return G.combat end
-CheckInteractDistance = function(_, i) if G.secretRange then return SECRET end return G.dist <= (i == 3 and 8 or 28) end
+CheckInteractDistance = function(_, i) if G.secretRange or G.secretInteract then return SECRET end return G.dist <= (i == 3 and 8 or 28) end
 UnitRace = function() return "Orc", "Orc" end
 GetTime = function() return G.now end
 -- An old version of the addon still installed next to this one
@@ -504,6 +504,12 @@ check(len(out) == 2 and L.RANGE.out in out[0] and "28:" in out[1], "range comman
 S.secretRange = True
 check(range_at(27) is None, "hidden values in combat: nothing shown")
 S.secretRange = False
+S.secretInteract = True
+check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2),
+      f"too close for Auto Shot with the close check hidden in combat: dead zone, not out of range: {rng.text.text}")
+check(range_at(38) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6), f"and really out of range is still out: {rng.text.text}")
+check(range_at(20) == f"15-20 {yd}" and colour()[:2] == (0.3, 1), f"in range as before: {rng.text.text}")
+S.secretInteract = False
 S.target = None
 check(range_at(27) is None, "no target: nothing shown")
 S.target = lua.table(hostile=False)

@@ -133,6 +133,15 @@ local function Melee(unit, close)
 	return melee
 end
 
+-- Within one of the steps up to Auto Shot's reach
+local function WithinReach(unit)
+	local reach = AutoShotReach()
+	for _, step in ipairs(steps) do
+		if step[1] <= reach and CheckStep(step, unit) then return true end
+	end
+	return false
+end
+
 -- ranged | melee | dead | out, or nil when the game doesn't say
 function ns.RangeState(unit)
 	local ranged = InRange(names.autoShot, unit)
@@ -141,6 +150,10 @@ function ns.RangeState(unit)
 	local melee = Melee(unit, close)
 	if melee then return "melee" end
 	if close then return "dead" end
+	-- Auto Shot also says no when the target is too close. In combat the game may not answer
+	-- the close check, so a step within Auto Shot's reach that says yes means the dead zone
+	-- (a big mob's edge is nearer than it looks), not out of range
+	if ranged == false and close == nil and WithinReach(unit) then return "dead" end
 	if ranged == nil and melee == nil and close == nil then return nil end
 	return "out"
 end
