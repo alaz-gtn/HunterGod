@@ -1,3 +1,7 @@
+# 1.0.2
+
+- The AGGRO warning shows the same threat as the game's tooltip and target frame (your threat next to your pet's), so it now warns at range too: before, it read the threat that pulls aggro, which at range is 130% of your pet's.
+
 # 1.0.1
 
 - A new options window: a menu with icons, on/off switches, sections and a live preview of the range number.

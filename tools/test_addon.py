@@ -73,7 +73,7 @@ GetPetActionInfo = function(i) local a = G.petActions[i] if a then return unpack
 IsInInstance = function() return G.instance ~= nil, G.instance or "none" end
 IsInGroup = function() return G.group end
 -- Your threat on the target: tanking, status, % of what pulls aggro
-UnitDetailedThreatSituation = function(a, b) if G.threat then return G.threat[1], G.threat[2], G.threat[3] end end
+UnitDetailedThreatSituation = function(a, b) if G.threat then return G.threat[1], G.threat[2], G.threat[3], G.threat[4] end end
 NUM_PET_ACTION_SLOTS = 10
 -- Forever gives the summoned pet's diet through the stable API (slot 0)
 C_StableInfo = { GetStablePetFoodTypes = function(i) if G.pet and i == 0 then return G.pet.diet end end }
@@ -1069,23 +1069,31 @@ G.RunTimers()
 thr = G.NAMED["HunterGodThreat"]
 S.target = lua.table(hostile=True)
 S.pet = lua.table(level=48, name="Garra", familyID=20, diet=lua.table())
-S.threat = lua.table(False, 0, 85)
+S.threat = lua.table(False, 0, 65, 85)
 ns.UpdateThreat()
 check(not thr.shown, "85% of the aggro: nothing yet")
-S.threat = lua.table(False, 1, 92.4)
+S.threat = lua.table(False, 1, 71, 92.4)
 S.plate = G.CreateFrame("Frame")
 ns.UpdateThreat()
 check(thr.shown and thr.text.text == L.THREAT % 92 and G.Same(thr.point[2], S.plate) and thr.point[1] == "TOP",
-      f"92%: under the target's nameplate ({thr.text.text})")
+      f"92% of the pet's threat, as the game's tooltip says (not the scaled 71%): under the nameplate ({thr.text.text})")
+S.threat = lua.table(False, 1, 74.6, 97)
+ns.UpdateThreat()
+check(thr.shown and thr.text.text == L.THREAT % 97, f"tooltip at 97% at range: it warns ({thr.text.text})")
+S.threat = lua.table(False, 1, 69, 89.6)
+ns.UpdateThreat()
+check(thr.shown and thr.text.text == L.THREAT % 90, f"rounded like the tooltip: 89.6 is 90% ({thr.text.text})")
+S.threat = lua.table(False, 1, 71, 92.4)
+ns.UpdateThreat()
 check(tuple(round(c, 2) for c in thr.text.color.values())[:2] == (1, 0.55), "in orange")
-S.threat = lua.table(True, 3, 100)
+S.threat = lua.table(True, 3, 100, 100)
 ns.UpdateThreat()
 check(thr.shown and thr.text.text == L.THREAT_PULLED and tuple(round(c, 2) for c in thr.text.color.values())[:2] == (1, 0.15),
       f"you pulled it: {thr.text.text}, in red")
-S.threat = lua.table(G.SECRET, G.SECRET, G.SECRET)
+S.threat = lua.table(G.SECRET, G.SECRET, G.SECRET, G.SECRET)
 ns.UpdateThreat()
 check(not thr.shown, "threat hidden by the game: nothing")
-S.threat = lua.table(True, 3, 100)
+S.threat = lua.table(True, 3, 100, 100)
 S.pet = None
 ns.UpdateThreat()
 check(not thr.shown, "solo without a pet you always have the aggro: no warning")
@@ -1094,13 +1102,13 @@ ns.UpdateThreat()
 check(thr.shown, "in a group it warns again")
 S.group = False
 S.pet = lua.table(level=48, name="Garra", familyID=20, diet=lua.table())
-S.threat = lua.table(False, 0, 85)
+S.threat = lua.table(False, 0, 65, 85)
 db.range.threatPct = 80
 ns.UpdateThreat()
 check(thr.shown and thr.text.text == L.THREAT % 85, "the line can be lowered to 80%")
 db.range.threatPct = 90
 S.plate = None
-S.threat = lua.table(False, 1, 95)
+S.threat = lua.table(False, 1, 73, 95)
 ns.UpdateThreat()
 check(thr.shown and G.Same(thr.point[2], G.UIParent), "no nameplate: where you put it")
 db.range.threat = False

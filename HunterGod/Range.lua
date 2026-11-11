@@ -423,11 +423,13 @@ function ns.StyleThreat()
 	end
 end
 
--- Do you have the target's aggro, and how close are you to pulling it (100% pulls it)
+-- Do you have the target's aggro, and your threat as the game's tooltip and target frame show
+-- it: next to the threat of whoever has the aggro (the pet), rounded. Not the scaled figure,
+-- next to what pulls it: at range you pull at 130%, so that one read lower than the tooltip
 local function ThreatOnTarget()
-	local ok, tanking, _, percent = pcall(UnitDetailedThreatSituation, "player", "target")
-	if not ok or ns.IsSecret(tanking) or ns.IsSecret(percent) then return end
-	return tanking, percent
+	local ok, tanking, _, _, raw = pcall(UnitDetailedThreatSituation, "player", "target")
+	if not ok or ns.IsSecret(tanking) or ns.IsSecret(raw) then return end
+	return tanking, type(raw) == "number" and floor(raw + 0.5) or nil
 end
 
 function ns.UpdateThreat()
@@ -440,8 +442,8 @@ function ns.UpdateThreat()
 			local tanking, percent = ThreatOnTarget()
 			if tanking then
 				text, pulled = L.THREAT_PULLED, true
-			elseif type(percent) == "number" and percent >= db.threatPct then
-				text = format(L.THREAT, floor(percent))
+			elseif percent and percent >= db.threatPct then
+				text = format(L.THREAT, percent)
 			end
 		end
 	end
