@@ -475,8 +475,16 @@ def colour():
     return tuple(round(c, 2) for c in rng.text.color.values())
 
 
-check(range_at(27) == f"25-28 {yd}" and colour()[:2] == (0.3, 1), f"27 yd: in range, green: {rng.text.text}")
-check(range_at(32) == f"30-35 {yd}", f"32 yd: {rng.text.text}")
+check(range_at(27) == f"25-28 {yd}" and colour()[:2] == (0.3, 1) and not rng.glow.shown,
+      f"27 yd: in range, green: {rng.text.text}")
+check(range_at(32) == f"30-35 {yd}" and colour()[:2] == (0.45, 0.8) and rng.glow.shown,
+      f"32 yd: the last 5 yards of Auto Shot's 35, light blue and glowing: {rng.text.text}")
+check(rng.glow.tex == ns.GLOW and ns.GLOW.endswith("glow.tga"), "the glow is the addon's own soft oval")
+db.range.farGlow = False
+check(range_at(32) == f"30-35 {yd}" and colour()[:2] == (0.3, 1) and not rng.glow.shown, "with that option off, green")
+db.range.farGlow = True
+check(range_at(37) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6) and not rng.glow.shown,
+      "out of range is grey, not the edge")
 check(range_at(9) == f"8-10 {yd}", f"9 yd: Auto Shot reaches from 8: {rng.text.text}")
 check(range_at(3) == f"0-5 {yd}" and colour()[:2] == (1, 0.82), f"3 yd: melee, yellow: {rng.text.text}")
 check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2), f"6 yd: dead zone, red: {rng.text.text}")
@@ -493,12 +501,50 @@ G.Uncache(ns, 30)
 check(range_at(27) == f"20-28 {yd}", f"items not loaded: those steps are skipped: {rng.text.text}")
 S.uncached = lua.table()
 S.lying[5] = True
-check(range_at(32) == f"30-35 {yd}" and colour()[:2] == (0.3, 1),
+check(range_at(32) == f"30-35 {yd}" and colour()[:2] == (0.45, 0.8),
       f"an item that wrongly says 'within 5 yd' can't contradict Auto Shot: {rng.text.text}")
 S.lying = lua.table()
 S.reach = 41
-check(range_at(38) == f"35-40 {yd}" and colour()[:2] == (0.3, 1), f"Hawk Eye: 38 yd is still in range: {rng.text.text}")
+check(range_at(38) == f"35-40 {yd}" and colour()[:2] == (0.45, 0.8) and rng.glow.shown,
+      f"Hawk Eye: 38 yd is still in range, and the edge of its 41: {rng.text.text}")
+check(range_at(33) == f"30-35 {yd}" and colour()[:2] == (0.3, 1), f"with Hawk Eye 33 yd isn't the edge any more: {rng.text.text}")
+S.reach = 39
+check(range_at(36) == f"35-39 {yd}" and colour()[:2] == (0.45, 0.8), f"Hawk Eye 2/3, 39 yd: the edge from 35: {rng.text.text}")
 S.reach = 35
+out = slash("dr")
+check(out == [L.PREFIX + L.DR_NO_API], "dr: a game without diminishing returns says so")
+G.C_SpellDiminish = lua.eval("""{
+  IsSystemSupported = function() return true end,
+  GetAllSpellDiminishCategories = function(ruleset)
+    if ruleset == 2 then return { { category = 4, name = "Incapacitate" } } end
+    return {}
+  end,
+  ShouldTrackSpellDiminishCategory = function() return SECRET end,
+}""")
+G.Enum.SpellDiminishRuleset = lua.eval("{ None = 0, PvE = 1, PvP = 2 }")
+G.C_CVar = lua.eval("{ GetCVar = function(name) return name == 'spellDiminishPVPEnemiesEnabled' and '1' or '0' end }")
+out = slash("dr")
+print("     dr report:", out)
+check(len(out) == 4 and "Incapacitate (4, " + L.DR_SECRET + ")" in out[2] and L.DR_NONE in out[1] and out[3] == L.PREFIX + L.DR_ON,
+      "dr: the system, the game's options, each ruleset's categories, and it starts logging")
+before = S.now
+S.now = 100.5
+printed.clear()
+G.Fire("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", "nameplate3",
+       lua.eval("{ category = 4, startTime = 100, duration = 18, showCountdown = true, isImmune = false }"))
+G.Fire("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", "nameplate3",
+       lua.eval("{ category = SECRET, startTime = SECRET, duration = 18, showCountdown = true, isImmune = SECRET }"))
+G.Fire("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", G.SECRET, G.SECRET)
+print("     dr log:", list(printed))
+check(len(printed) == 3 and "category=4 startTime=100 duration=18 showCountdown=true isImmune=false" in printed[0]
+      and "100.5" in printed[0] and f"category={L.DR_SECRET} startTime={L.DR_SECRET} duration=18" in printed[1]
+      and printed[2].count(L.DR_SECRET) == 2,
+      "dr: each update in chat, with what is secret marked")
+out = slash("dr")
+G.Fire("UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED", "nameplate3", lua.eval("{ category = 4 }"))
+check(out[-1] == L.PREFIX + L.DR_OFF and len(printed) == len(out), "dr again: stops logging")
+S.now = before
+G.C_SpellDiminish = None
 out = slash("rango" if es else "range")
 print("     range report:", out)
 check(len(out) == 2 and L.RANGE.out in out[0] and "28:" in out[1], "range command: state, yards and each step")
@@ -1188,6 +1234,10 @@ display.scripts.OnClick(display)
 check(db.range.display == "bracket" and swatch.number.text == "25-30", f"the preview follows the settings: {swatch.number.text}")
 display.scripts.OnClick(display)
 check(db.range.display == "number", "and back to the number")
+far = next(c for c in page["range"].controls.values() if c.setting == L.RANGE.far)
+check(far.number.text == "33" and far.glow.shown and not swatch.glow.shown,
+      "the preview has the edge of your reach too, glowing")
+check(any(c.setting == L.OPT_FAR for c in page["range"].controls.values()), "and its switch")
 combat = page["aspects"]
 check(any(c.setting == L.OPT_THREAT_PCT for c in combat.controls.values())
       and any(c.setting == L.OPT_MELEE_ALPHA for c in combat.controls.values()),

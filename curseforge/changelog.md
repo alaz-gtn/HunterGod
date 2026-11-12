@@ -1,3 +1,8 @@
+# 1.0.7
+
+- The range turns light blue with a soft glow in the last 5 yards of your reach: 30-35 yards, further with Hawk Eye. It has its own switch and colour in the options. Restart the game after updating: the glow is a new file.
+- /huntergod dr logs what the game says about diminishing returns, to see what an addon can use for a Freezing Trap tracker.
+
 # 1.0.6
 
 - The range and the AGGRO warning can be moved again: what you drag is now a spot of their own that never hangs from a nameplate, and they follow it when they aren't on the target's nameplate.

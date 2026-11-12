@@ -47,6 +47,7 @@ local L = {
 	-- Range
 	RANGE = {
 		ranged = "In range",
+		far = "Max range",
 		melee = "Melee",
 		dead = "Dead zone",
 		out = "Out of range",
@@ -163,12 +164,23 @@ local L = {
 	UNITS = { yards = "Yards", meters = "Metres" },
 	UNITS_SET = "distance in %s.",
 	RANGE_NO_TARGET = "you have no target.",
+	DR_NO_API = "this game has no diminishing returns for addons.",
+	DR_STATUS = "diminishing returns: system %s; the game's PvP option %s, only the ones you cause %s.",
+	DR_OPTION = "(the game's option is \"%s\", in Options, Gameplay)",
+	DR_RULESET = "%s categories (name, number, tracked): %s",
+	DR_NONE = "none",
+	DR_ON = "logging diminishing returns: freeze someone and what the game sends shows up here. /huntergod dr again to stop.",
+	DR_OFF = "stopped logging diminishing returns.",
+	DR_NO_EVENT = "the game doesn't send diminishing returns to addons.",
+	DR_EVENT = "DR %s (%s) at %s: %s",
+	DR_SECRET = "secret",
 	RANGE_REPORT = "target: %s, %d-%d yd (Auto Shot reaches %d yd). Auto Shot in range: %s; melee: %s.",
 	RANGE_STEPS = "steps (yd:in range?): ",
 	RANGE_LOADING = "(some items still loading)",
 	RANGE_YES = "yes",
 	RANGE_NO = "no",
 	OPT_SHOW_STATE = "Also write the state (in range, dead zone...)",
+	OPT_FAR = "Light blue and glowing in the last 5 yards of your reach",
 	OPT_STYLE = "Style",
 	STYLE = { text = "Text", icon = "Colour square", both = "Square and text" },
 	OPT_POSITION = "Position",
@@ -192,6 +204,7 @@ local L = {
 		"  /huntergod meters | yards  - the range in metres or yards",
 		"  /huntergod pet  - what the addon knows about your pet",
 		"  /huntergod range  - what each range check says about your target",
+		"  /huntergod dr  - log what the game says about diminishing returns",
 		"  /ammo arrows | bullets | both | weapon  - which ammo the map shows",
 		"  /ammo nearest  - waypoint to the nearest useful vendor",
 		"  /ammo trainers | food | faction | minimap | continent | class | button  - toggle each option",
@@ -243,6 +256,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.ANY_CLASS = "con cualquier clase"
 	L.RANGE = {
 		ranged = "A distancia",
+		far = "Al límite",
 		melee = "Cuerpo a cuerpo",
 		dead = "Zona muerta",
 		out = "Fuera de alcance",
@@ -348,12 +362,23 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.UNITS = { yards = "Yardas", meters = "Metros" }
 	L.UNITS_SET = "distancia en %s."
 	L.RANGE_NO_TARGET = "no tienes objetivo."
+	L.DR_NO_API = "este juego no da los rendimientos decrecientes a los addons."
+	L.DR_STATUS = "rendimientos decrecientes: sistema %s; la opción JcJ del juego %s, solo los que causas tú %s."
+	L.DR_OPTION = "(la opción del juego es \"%s\", en Opciones, Juego)"
+	L.DR_RULESET = "categorías %s (nombre, número, seguida): %s"
+	L.DR_NONE = "ninguna"
+	L.DR_ON = "apuntando los rendimientos decrecientes: congela a alguien y aquí sale lo que manda el juego. /huntergod dr otra vez para parar."
+	L.DR_OFF = "ya no apunto los rendimientos decrecientes."
+	L.DR_NO_EVENT = "el juego no manda los rendimientos decrecientes a los addons."
+	L.DR_EVENT = "DR %s (%s) a los %s: %s"
+	L.DR_SECRET = "secreto"
 	L.RANGE_REPORT = "objetivo: %s, %d-%d yd (Disparo automático llega a %d yd). Disparo automático a rango: %s; cuerpo a cuerpo: %s."
 	L.RANGE_STEPS = "pasos (yd:¿a rango?): "
 	L.RANGE_LOADING = "(aún cargando algunos objetos)"
 	L.RANGE_YES = "sí"
 	L.RANGE_NO = "no"
 	L.OPT_SHOW_STATE = "Escribir también el estado (a distancia, zona muerta...)"
+	L.OPT_FAR = "Azul claro y con brillo en las últimas 5 yardas de tu alcance"
 	L.OPT_STYLE = "Estilo"
 	L.STYLE = { text = "Texto", icon = "Cuadrado de color", both = "Cuadrado y texto" }
 	L.OPT_POSITION = "Posición"
@@ -377,6 +402,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 		"  /huntergod metros | yardas  - la distancia en metros o en yardas",
 		"  /huntergod mascota  - lo que el addon sabe de tu mascota",
 		"  /huntergod rango  - qué dice cada comprobación de distancia de tu objetivo",
+		"  /huntergod dr  - apuntar lo que dice el juego de los rendimientos decrecientes",
 		"  /municion flechas | balas | ambas | arma  - qué munición marca el mapa",
 		"  /municion cerca  - ruta al vendedor útil más cercano",
 		"  /municion instructores | comida | faccion | minimapa | continente | clase | boton  - activar o quitar cada opción",

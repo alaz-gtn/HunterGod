@@ -259,7 +259,8 @@ local function PickColor(color, changed)
 end
 
 -- The range display as it will look, one sample per state: click one to change its colour
-local SAMPLES = { { "melee", 0, 5, 3 }, { "dead", 5, 8, 7 }, { "ranged", 25, 30, 28 }, { "out", 41, nil, 43 } }
+local SAMPLES = { { "melee", 0, 5, 3 }, { "dead", 5, 8, 7 }, { "ranged", 25, 30, 28 }, { "far", 30, 35, 33 },
+	{ "out", 41, nil, 43 } }
 
 local function Preview(page, y, changed)
 	local range = ns.db.range
@@ -277,16 +278,20 @@ local function Preview(page, y, changed)
 		sample:SetSize(cell - 8, 70)
 		sample:SetPoint("TOPLEFT", (i - 1) * cell + 4, -4)
 		Highlight(sample, 0.06)
+		local glow = sample:CreateTexture(nil, "BACKGROUND")
+		local glowReady = glow:SetTexture(ns.GLOW) ~= false
+		glow:SetBlendMode("ADD")
+		glow:SetPoint("CENTER", sample, "CENTER", 0, 8)
 		local square = sample:CreateTexture(nil, "ARTWORK")
 		local number = sample:CreateFontString(nil, "ARTWORK")
 		local unit = sample:CreateFontString(nil, "ARTWORK")
 		local caption = Text(sample, "GameFontHighlightSmall", MUTED)
 		caption:SetPoint("BOTTOM", 0, 4)
 		caption:SetText(L.RANGE[state])
-		sample.number, sample.unit = number, unit
+		sample.number, sample.unit, sample.glow = number, unit, glow
 		sample.Refresh = function()
 			local c = range.colors[state]
-			local size = min(range.textSize, 30)
+			local size = min(range.textSize, 22)
 			local font = ns.FONTS[range.font]
 			number:SetFont(GameFontNormal:GetFont(), size, "THICKOUTLINE")
 			unit:SetFont(GameFontNormal:GetFont(), max(floor(size * 0.5), 8), "OUTLINE")
@@ -316,6 +321,9 @@ local function Preview(page, y, changed)
 			number:SetPoint("LEFT", sample, "CENTER", x, 8)
 			unit:ClearAllPoints()
 			unit:SetPoint("BOTTOMLEFT", number, "BOTTOMRIGHT", 3, 2)
+			glow:SetShown(state == "far" and range.farGlow and glowReady)
+			glow:SetVertexColor(c.r, c.g, c.b, 0.7)
+			glow:SetSize(width + size * 2, size * 2.4)
 		end
 		sample:SetScript("OnClick", function() PickColor(range.colors[state], changed) end)
 		sample.setting = L.RANGE[state]
@@ -520,6 +528,7 @@ local function Build()
 	y = Check(page, y, L.OPT_RANGE_ON, function() return range.enabled end, function(v) range.enabled = v RangeChanged() end)
 	y = Check(page, y, L.OPT_ONLY_COMBAT, function() return range.onlyCombat end, function(v) range.onlyCombat = v RangeChanged() end)
 	y = Check(page, y, L.OPT_SHOW_STATE, function() return range.showState end, function(v) range.showState = v RangeChanged() end)
+	y = Check(page, y, L.OPT_FAR, function() return range.farGlow end, function(v) range.farGlow = v RangeChanged() end)
 	y = Section(page, y, L.SEC_LOOK)
 	y = Choice(page, y, L.OPT_DISPLAY, { { "number", L.DISPLAY.number }, { "bracket", L.DISPLAY.bracket } },
 		function() return range.display end, function(v) range.display = v RangeChanged() end)

@@ -152,6 +152,18 @@ local function TooClose(unit)
 	return false
 end
 
+-- Where the last five yards of Auto Shot's reach begin, at the nearest range step (they are
+-- 5 yards apart): 30 for its 35 yards, 35 with all of Hawk Eye's 41
+local function FarEdge()
+	local reach = AutoShotReach()
+	local wanted, edge = reach - 5, nil
+	for _, step in ipairs(steps) do
+		local yards = step[1]
+		if yards < reach and (not edge or math.abs(yards - wanted) < math.abs(edge - wanted)) then edge = yards end
+	end
+	return edge or wanted
+end
+
 -- ranged | melee | dead | out, or nil when the game doesn't say
 function ns.RangeState(unit)
 	local ranged = InRange(names.autoShot, unit)
@@ -319,6 +331,16 @@ local function Show(state, low, high, value)
 	local width = (icon and db.textSize * 0.7 or 0) + (icon and text and 6 or 0)
 		+ (text and frame.text:GetStringWidth() + 3 + frame.unit:GetStringWidth() or 0)
 	frame:SetSize(max(width, 16), db.textSize + 4)
+	-- At the edge of your reach a soft light breathes behind it
+	local far = state == "far"
+	frame.glow:SetShown(far and frame.glowReady)
+	if far then
+		frame.glow:SetVertexColor(c.r, c.g, c.b)
+		frame.glow:SetSize(max(width, 16) + db.textSize * 2, db.textSize * 2.4)
+		if not frame.pulse:IsPlaying() then frame.pulse:Play() end
+	else
+		frame.pulse:Stop()
+	end
 	frame:Show()
 end
 
@@ -400,6 +422,8 @@ function ns.UpdateRange()
 	local state = ns.RangeState("target")
 	if state and db.enabled then
 		local low, high = ns.RangeDistance("target", state)
+		-- The last five yards of your reach, where you want to stand
+		if state == "ranged" and db.farGlow and low >= FarEdge() then state = "far" end
 		Show(state, low, high, ns.EstimateDistance(GetTime(), low, high))
 	else
 		frame:Hide()
@@ -427,6 +451,20 @@ frame.iconBorder:SetColorTexture(0, 0, 0, 0.9)
 frame.text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 frame.unit = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 frame.state = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+-- A soft oval of our own (tools/make_glow.py). A new file needs the game restarted: until then
+-- the game can't find it, and there's no glow rather than a box
+ns.GLOW = "Interface\\AddOns\\HunterGod\\media\\glow.tga"
+frame.glow = frame:CreateTexture(nil, "BACKGROUND")
+frame.glowReady = frame.glow:SetTexture(ns.GLOW) ~= false
+frame.glow:SetBlendMode("ADD")
+frame.glow:SetPoint("CENTER")
+frame.glow:Hide()
+frame.pulse = frame.glow:CreateAnimationGroup()
+frame.pulse:SetLooping("BOUNCE")
+local glowFade = frame.pulse:CreateAnimation("Alpha")
+glowFade:SetFromAlpha(0.35)
+glowFade:SetToAlpha(0.85)
+glowFade:SetDuration(0.9)
 
 melee = CreateFrame("Frame", "HunterGodMelee", UIParent)
 melee:SetSize(220, 40)

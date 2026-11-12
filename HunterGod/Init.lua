@@ -29,9 +29,11 @@ local defaults = {
 		display = "number", -- number | bracket
 		font = "fredoka", -- fredoka | changa | game
 		showState = false,
+		farGlow = true, -- light blue and glowing in the last 5 yards of your reach
 		textSize = 26,
 		colors = {
 			ranged = { r = 0.3, g = 1, b = 0.3 },
+			far = { r = 0.45, g = 0.8, b = 1 },
 			melee = { r = 1, g = 0.82, b = 0 },
 			dead = { r = 1, g = 0.2, b = 0.2 },
 			out = { r = 0.6, g = 0.6, b = 0.6 },

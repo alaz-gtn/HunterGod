@@ -397,3 +397,74 @@ freezeEvents:SetScript("OnEvent", function(self, event, unit)
 		PlaceFreeze(unit)
 	end
 end)
+
+-- /huntergod dr: logs what the game says about diminishing returns. Forever keeps its own, for
+-- PvP, and sends it to addons; this shows what of it an addon can read in combat
+local DR_EVENT = "UNIT_SPELL_DIMINISH_CATEGORY_STATE_UPDATED"
+local DR_FIELDS = { "category", "startTime", "duration", "showCountdown", "isImmune" }
+local drLog
+
+local function Shown(value)
+	if ns.IsSecret(value) then return L.DR_SECRET end
+	if type(value) == "number" and value % 1 ~= 0 then return format("%.1f", value) end
+	return tostring(value)
+end
+
+local function LogDR(_, _, unit, info)
+	local parts = {}
+	if ns.IsSecret(info) then
+		parts[1] = L.DR_SECRET
+	else
+		for _, key in ipairs(DR_FIELDS) do
+			local ok, value = pcall(function() return info[key] end)
+			parts[#parts + 1] = key .. "=" .. (ok and Shown(value) or L.DR_SECRET)
+		end
+	end
+	local name = not ns.IsSecret(unit) and select(2, pcall(UnitName, unit))
+	ns.Print(format(L.DR_EVENT, Shown(unit), Shown(name or "?"), Shown(GetTime()), table.concat(parts, " ")))
+end
+
+local function DRCategories(api, ruleset)
+	local value = Enum.SpellDiminishRuleset and Enum.SpellDiminishRuleset[ruleset]
+	local ok, list = pcall(api.GetAllSpellDiminishCategories, value)
+	local names = {}
+	for _, info in ipairs(ok and type(list) == "table" and list or {}) do
+		local tracked = select(2, pcall(api.ShouldTrackSpellDiminishCategory, info.category, value))
+		names[#names + 1] = format("%s (%s, %s)", Shown(info.name), Shown(info.category), Shown(tracked))
+	end
+	return #names > 0 and table.concat(names, ", ") or L.DR_NONE
+end
+
+local function DRReport()
+	local api = C_SpellDiminish
+	if not api then
+		ns.Print(L.DR_NO_API)
+		return
+	end
+	local function CVar(name)
+		local ok, value = pcall(C_CVar.GetCVar, name)
+		return ok and value ~= nil and Shown(value) or "?"
+	end
+	ns.Print(format(L.DR_STATUS, Shown(api.IsSystemSupported and api.IsSystemSupported()),
+		CVar("spellDiminishPVPEnemiesEnabled"), CVar("spellDiminishPVPOnlyTriggerableByMe")))
+	if _G.SPELL_DIMINISH_PVP_ENABLE_SETTING_LABEL then
+		ns.Print(format(L.DR_OPTION, _G.SPELL_DIMINISH_PVP_ENABLE_SETTING_LABEL))
+	end
+	ns.Print(format(L.DR_RULESET, "PvE", DRCategories(api, "PvE")))
+	ns.Print(format(L.DR_RULESET, "PvP", DRCategories(api, "PvP")))
+	if not drLog then
+		drLog = CreateFrame("Frame")
+		drLog:SetScript("OnEvent", LogDR)
+	end
+	drLog.on = not drLog.on
+	if not drLog.on then
+		drLog:UnregisterEvent(DR_EVENT)
+		ns.Print(L.DR_OFF)
+	elseif pcall(drLog.RegisterEvent, drLog, DR_EVENT) then
+		ns.Print(L.DR_ON)
+	else
+		drLog.on = false
+		ns.Print(L.DR_NO_EVENT)
+	end
+end
+ns.commands.dr = DRReport
