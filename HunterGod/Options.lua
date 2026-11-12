@@ -560,6 +560,7 @@ local function Build()
 	aspects[#aspects + 1] = { "any", L.ANY_ASPECT }
 	y = Choice(page, y, L.OPT_PREFERRED, aspects, function() return aspect.preferred end,
 		function(v) aspect.preferred = v ns.UpdateAspect() end)
+	y = Check(page, y, L.OPT_ASPECT_TEXT, function() return aspect.text end, function(v) aspect.text = v ns.UpdateAspect() end)
 	local trapOptions = db.traps
 	y = Section(page, y, L.SEC_TRAPS)
 	y = Check(page, y, L.OPT_TRAPS, function() return trapOptions.enabled end, function(v) trapOptions.enabled = v ns.UpdateTraps() end)

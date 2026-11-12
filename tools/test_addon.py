@@ -672,6 +672,11 @@ G.Fire("PLAYER_REGEN_DISABLED")
 S.combat = True
 G.Fire("UNIT_AURA", "player")
 check(asp.shown and "Cheetah" in asp.text.text and not asp.icon.desat, f"Cheetah in combat: {asp.text.text}")
+check(not asp.text.shown, "just the icon: no words under it")
+db.aspect.text = True
+ns.UpdateAspect()
+check(asp.text.shown, "unless you ask for them")
+db.aspect.text = False
 G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 25296)  # Hawk, top rank
 check(ns.CurrentAspect() == "hawk" and not asp.shown, "casting Hawk in combat clears the warning")
 G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 13163)
@@ -1239,6 +1244,7 @@ check(far.number.text == "33" and far.glow.shown and not swatch.glow.shown,
       "the preview has the edge of your reach too, glowing")
 check(any(c.setting == L.OPT_FAR for c in page["range"].controls.values()), "and its switch")
 combat = page["aspects"]
+check(any(c.setting == L.OPT_ASPECT_TEXT for c in combat.controls.values()), "the aspect warning's words have a switch")
 check(any(c.setting == L.OPT_THREAT_PCT for c in combat.controls.values())
       and any(c.setting == L.OPT_MELEE_ALPHA for c in combat.controls.values()),
       "the melee range and aggro warnings sit with the other combat warnings")

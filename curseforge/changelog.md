@@ -1,3 +1,7 @@
+# 1.0.8
+
+- The aspect warning is just its icon now: in colour for Cheetah or Pack in combat, grey for the aspect you're missing. A switch in Combat, Aspects brings the words back.
+
 # 1.0.7
 
 - The range turns light blue with a soft glow in the last 5 yards of your reach: 30-35 yards, further with Hawk Eye. It has its own switch and colour in the options. Restart the game after updating: the glow is a new file.

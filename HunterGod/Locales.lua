@@ -189,6 +189,7 @@ local L = {
 	OPT_ASPECT_ON = "Aspect warnings in combat",
 	OPT_TRAVEL = "Warn about Cheetah or Pack",
 	OPT_MISSING = "Warn when your aspect is missing",
+	OPT_ASPECT_TEXT = "Write the warning under the icon",
 	OPT_PREFERRED = "Your combat aspect",
 	OPT_AMMO_ON = "Low ammo warning",
 	OPT_THRESHOLD = "Warn below",
@@ -387,6 +388,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.OPT_ASPECT_ON = "Avisos de aspecto en combate"
 	L.OPT_TRAVEL = "Avisar de Guepardo o Manada"
 	L.OPT_MISSING = "Avisar si te falta tu aspecto"
+	L.OPT_ASPECT_TEXT = "Escribir el aviso debajo del icono"
 	L.OPT_PREFERRED = "Tu aspecto de combate"
 	L.OPT_AMMO_ON = "Aviso de poca munición"
 	L.OPT_THRESHOLD = "Avisar por debajo de"

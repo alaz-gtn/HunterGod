@@ -83,7 +83,9 @@ end
 local function Warn(key, text, missing)
 	frame.icon:SetTexture(SpellIcon(ns.ASPECTS[key]))
 	frame.icon:SetDesaturated(missing or false)
+	-- The icon says it alone: the words underneath only if you want them
 	frame.text:SetText(text)
+	frame.text:SetShown(db.text)
 	frame:Show()
 	if not frame.pulse:IsPlaying() then frame.pulse:Play() end
 end
