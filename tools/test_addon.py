@@ -451,6 +451,7 @@ check(low not in vendor_ids() and db.notAmmo[low], f"vendor without ammo removed
 
 # ---------------------------------------------------------------- Range
 rng = G.NAMED["HunterGodRange"]
+rspot = G.NAMED["HunterGodRangeSpot"]
 S.target = lua.table(hostile=True)
 yd = L.YARDS
 
@@ -531,7 +532,7 @@ range_at(27)
 check(G.Same(rng.point[2], S.plate) and rng.point[1] == "BOTTOM", "sits above the target's nameplate")
 S.plate = None
 range_at(27)
-check(G.Same(rng.point[2], G.UIParent), "no nameplate: where you put it")
+check(G.Same(rng.point[2], rspot), "no nameplate: on its spot, where you put it")
 db.range.style = "icon"
 ns.StyleRange()
 range_at(27)
@@ -1084,6 +1085,7 @@ G.RunTimers()
 
 # ---------------------------------------------------------------- Threat under the target's nameplate
 thr = G.NAMED["HunterGodThreat"]
+tspot = G.NAMED["HunterGodThreatSpot"]
 S.target = lua.table(hostile=True)
 S.pet = lua.table(level=48, name="Garra", familyID=20, diet=lua.table())
 S.threat = lua.table(False, 0, 65, 85)
@@ -1127,7 +1129,7 @@ db.range.threatPct = 90
 S.plate = None
 S.threat = lua.table(False, 1, 73, 95)
 ns.UpdateThreat()
-check(thr.shown and G.Same(thr.point[2], G.UIParent), "no nameplate: where you put it")
+check(thr.shown and G.Same(thr.point[2], tspot), "no nameplate: on its spot, where you put it")
 db.range.threat = False
 ns.UpdateThreat()
 check(not thr.shown, "turned off: nothing")
@@ -1207,29 +1209,34 @@ check(rng.shown and rng.text.text == "32" and asp.shown and ammo.shown and bar.s
       and melee.shown and miss.shown and sad.shown and hurt.shown and traps.shown and wrath.shown and thr.shown,
       "all displays show a sample")
 check(all(f.mover.shown and f.mover.width >= 140 and f.mover.height >= 44
-          for f in (rng, asp, ammo, bar, growl, toast, melee, miss, sad, hurt, traps, wrath, thr)),
+          for f in (rspot, asp, ammo, bar, growl, toast, melee, miss, sad, hurt, traps, wrath, tspot)),
       "each one with a big box to drag, even the food bar")
 check(bar.mover.level > 1, "the box sits above the food buttons")
-rng.point = lua.table("TOPLEFT", G.UIParent, "TOPLEFT", 300, -200)
-rng.mover.scripts.OnDragStop(rng.mover)
+check(not rng.mover and not thr.mover and G.Same(rng.point[2], rspot) and G.Same(thr.point[2], tspot),
+      "what you drag is the spot, never anchored to a nameplate, and the displays hang from it")
+rspot.point = lua.table("TOPLEFT", G.UIParent, "TOPLEFT", 300, -200)
+rspot.mover.scripts.OnDragStop(rspot.mover)
 check(list(db.positions["range"].values()) == ["TOPLEFT", "TOPLEFT", 300, -200], "the new place is saved")
 sad.point = lua.table("CENTER", G.UIParent, "CENTER", 10, 20)
 sad.mover.scripts.OnDragStop(sad.mover)
-thr.point = lua.table("CENTER", G.UIParent, "CENTER", 50, -300)  # being dragged
+tspot.point = lua.table("CENTER", G.UIParent, "CENTER", 50, -300)  # being dragged
 ns.UpdateThreat()
 ns.UpdateThreat()
-check(thr.point[4] == 50 and thr.point[5] == -300, "the aggro warning stays where you drag it, between updates")
-thr.mover.scripts.OnDragStop(thr.mover)
+check(tspot.point[4] == 50 and tspot.point[5] == -300 and G.Same(thr.point[2], tspot),
+      "the aggro warning stays where you drag it, between updates")
+tspot.mover.scripts.OnDragStop(tspot.mover)
 check(list(db.positions["threat"].values()) == ["CENTER", "CENTER", 50, -300], "and its new place is saved")
-check(abs(thr.defaultPoint[4] - rng.defaultPoint[4]) >= 44,
-      f"its default place is clear of the range display's box ({thr.defaultPoint[4]} vs {rng.defaultPoint[4]})")
+check(abs(tspot.defaultPoint[4] - rspot.defaultPoint[4]) >= 44,
+      f"its default place is clear of the range display's box ({tspot.defaultPoint[4]} vs {rspot.defaultPoint[4]})")
 check(db.positions["happiness"] is not None, "NOT HAPPY moved off the portrait: it stays where you put it")
 slash("lock")
 check(not ns.unlocked and not asp.shown and not ammo.shown and not bar.shown and not growl.shown and not toast.shown
       and not melee.shown and not miss.shown and not sad.shown and not hurt.shown and not traps.shown and not wrath.shown
       and not thr.shown
-      and not rng.mover.shown and not melee.mover.shown,
+      and not rspot.mover.shown and not melee.mover.shown,
       "locking hides the samples")
+check(list(rspot.point.values())[2:] == ["TOPLEFT", 300, -200] and list(tspot.point.values())[2:] == ["CENTER", 50, -300],
+      "and both stay where you dragged them")
 S.combat = True
 out = slash("unlock")
 check(not ns.unlocked and len(out) == 1, "can't unlock in combat")

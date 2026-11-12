@@ -27,6 +27,13 @@ local INTERACT = { [3] = 8, [4] = 28 }
 local INTERACT_RACE = { Tauren = { [3] = 6, [4] = 25 }, Scourge = { [3] = 7, [4] = 27 } }
 
 local db, frame, melee, plate
+-- Where the range and the aggro warning go when they aren't on the target's nameplate. You
+-- drag these spots, never anchored to a nameplate: in Forever a frame that was can't be
+-- dragged or read back, so its new place was lost
+local rangeSpot = CreateFrame("Frame", "HunterGodRangeSpot", UIParent)
+rangeSpot:SetSize(80, 30)
+local threatSpot = CreateFrame("Frame", "HunterGodThreatSpot", UIParent)
+threatSpot:SetSize(120, 20)
 local elapsed = 0
 local names = {} -- your spells by name: the game answers for the rank you know
 local steps = {} -- { yards, item or interact }, ascending
@@ -280,11 +287,11 @@ end
 
 local function Anchor(newPlate)
 	plate = newPlate
+	frame:ClearAllPoints()
 	if plate then
-		frame:ClearAllPoints()
 		frame:SetPoint("BOTTOM", plate, "TOP", 0, 2)
 	else
-		ns.PlaceFrame(frame)
+		frame:SetPoint("CENTER", rangeSpot)
 	end
 end
 
@@ -487,11 +494,11 @@ function ns.UpdateThreat()
 		and C_NamePlate.GetNamePlateForUnit("target")
 	if threat.anchor ~= (plate or "free") then
 		threat.anchor = plate or "free"
+		threat:ClearAllPoints()
 		if plate then
-			threat:ClearAllPoints()
 			threat:SetPoint("TOP", plate, "BOTTOM", 0, -2)
 		else
-			ns.PlaceFrame(threat)
+			threat:SetPoint("CENTER", threatSpot)
 		end
 	end
 	threat.text:SetText(text)
@@ -522,9 +529,10 @@ driver:SetScript("OnEvent", function(self, event)
 	BuildSteps()
 	self:RegisterEvent("SPELLS_CHANGED")
 	self:RegisterEvent("PLAYER_TARGET_CHANGED")
-	ns.Movable(frame, "range", { "CENTER", "CENTER", 0, -140 }, L.TAB_RANGE)
+	ns.Movable(rangeSpot, "range", { "CENTER", "CENTER", 0, -140 }, L.TAB_RANGE)
 	ns.Movable(melee, "melee", { "CENTER", "CENTER", 0, 60 }, L.MELEE_WARNING)
-	ns.Movable(threat, "threat", { "CENTER", "CENTER", 0, -200 }, L.THREAT_NAME) -- clear of the range's box
+	ns.Movable(threatSpot, "threat", { "CENTER", "CENTER", 0, -200 }, L.THREAT_NAME) -- clear of the range's box
+	Anchor(nil)
 	ns.StyleRange()
 	table.insert(ns.refreshers, function()
 		Anchor(TargetPlate())

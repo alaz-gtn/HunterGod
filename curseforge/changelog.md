@@ -1,3 +1,7 @@
+# 1.0.6
+
+- The range and the AGGRO warning can be moved again: what you drag is now a spot of their own that never hangs from a nameplate, and they follow it when they aren't on the target's nameplate.
+
 # 1.0.5
 
 - At 8-10 yards Auto Shot can still be too close, past the game's 8 yard check: the range showed out of range at 40 yd there, and now shows the dead zone.
