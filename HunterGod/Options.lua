@@ -567,6 +567,8 @@ local function Build()
 	y = Choice(page, y, L.OPT_PREFERRED, aspects, function() return aspect.preferred end,
 		function(v) aspect.preferred = v ns.UpdateAspect() end)
 	y = Check(page, y, L.OPT_ASPECT_TEXT, function() return aspect.text end, function(v) aspect.text = v ns.UpdateAspect() end)
+	y = Check(page, y, format(L.OPT_TRUESHOT, SpellName(19506) or L.TRUESHOT), function() return aspect.trueshot end,
+		function(v) aspect.trueshot = v ns.UpdateTrueshot() end, SpellIcon(19506))
 	local trapOptions = db.traps
 	y = Section(page, y, L.SEC_TRAPS)
 	y = Check(page, y, L.OPT_TRAPS, function() return trapOptions.enabled end, function(v) trapOptions.enabled = v ns.UpdateTraps() end)

@@ -33,6 +33,7 @@ SPELLS = { [75] = "Auto Shot", [2973] = "Raptor Strike", [2974] = "Wing Clip", [
   [13165] = "Aspect of the Hawk", [25296] = "Aspect of the Hawk", [13163] = "Aspect of the Monkey",
   [5118] = "Aspect of the Cheetah", [13159] = "Aspect of the Pack", [13161] = "Aspect of the Beast", [20043] = "Aspect of the Wild",
   [2649] = "Growl", [14921] = "Growl", [430] = "Drink", [433] = "Food", [19574] = "Bestial Wrath",
+  [19506] = "Trueshot Aura", [20906] = "Trueshot Aura",
   [1499] = "Freezing Trap", [14311] = "Freezing Trap", [13795] = "Immolation Trap", [13809] = "Frost Trap", [13813] = "Explosive Trap" }
 
 -- Game state the tests change
@@ -125,7 +126,9 @@ C_Spell = {
     return { startTime = 0, duration = 0 }
   end,
 }
-C_UnitAuras = { GetAuraDataByIndex = function(_, i) local name = G.auras[i] if name then return { name = name } end end,
+C_UnitAuras = { GetAuraDataByIndex = function(_, i) local name = G.auras[i] if not name then return end
+    local t = G.auraTimes and G.auraTimes[name]
+    return { name = name, expirationTime = t and t[1] or 0, duration = t and t[2] or 0 } end,
   GetAuraDataBySpellName = function() return G.wrathAura end }
 C_Secrets = { ShouldAurasBeSecret = function() return G.secret end }
 C_NamePlate = { GetNamePlateForUnit = function() return G.plate end }
@@ -1154,6 +1157,53 @@ S.pet = None
 G.Fire("UNIT_PET", "player")
 G.RunTimers()
 
+# ---------------------------------------------------------------- Trueshot Aura
+ts = G.NAMED["HunterGodTrueshot"]
+S.secret = False
+S.combat = False
+G.Fire("PLAYER_REGEN_ENABLED")
+S.auras = lua.table("Aspect of the Hawk")
+G.Fire("UNIT_AURA", "player")
+check(not ts.shown, "without the talent: no Trueshot Aura reminder")
+S.known[20906] = True
+G.Fire("SPELLS_CHANGED")
+S.auraTimes = lua.table()
+S.auraTimes["Trueshot Aura"] = lua.table(S.now + 600, 1800)
+S.auras = lua.table("Aspect of the Hawk", "Trueshot Aura")
+G.Fire("UNIT_AURA", "player")
+check(not ts.shown, "10 minutes left: nothing yet")
+S.now = S.now + 500
+ns.UpdateTrueshot()
+check(ts.shown and ts.text.text == "1:40" and not ts.icon.desat, f"under 2 minutes: the reminder, counting down ({ts.text.text})")
+S.secret = True  # in combat the buffs are hidden
+G.Fire("PLAYER_REGEN_DISABLED")
+S.combat = True
+S.now = S.now + 30
+G.Fire("UNIT_AURA", "player")
+check(ts.shown and ts.text.text == "1:10", f"in combat it keeps counting from when it was seen ({ts.text.text})")
+S.now = S.now + 80
+ns.UpdateTrueshot()
+check(ts.shown and ts.text.text == "" and ts.icon.desat, "run out: the icon in grey until you cast it")
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 20906)
+check(not ts.shown, "cast it again, even in combat: gone for another 30 minutes")
+S.now = S.now + 1700
+ns.UpdateTrueshot()
+check(ts.shown and ts.text.text == "1:40", f"and back near its end ({ts.text.text})")
+S.secret = False
+S.combat = False
+S.auras = lua.table("Aspect of the Hawk")
+G.Fire("PLAYER_REGEN_ENABLED")
+check(ts.shown and ts.icon.desat, "not on you after the fight (you died): grey reminder")
+db.aspect.trueshot = False
+ns.UpdateTrueshot()
+check(not ts.shown, "with its option off, nothing")
+db.aspect.trueshot = True
+S.auraTimes["Trueshot Aura"] = lua.table(0, 0)
+S.auras = lua.table("Aspect of the Hawk", "Trueshot Aura")
+G.Fire("UNIT_AURA", "player")
+check(not ts.shown, "an aura with no end (until cancelled): nothing to remind")
+S.now = S.now - 2310
+
 # ---------------------------------------------------------------- Threat under the target's nameplate
 thr = G.NAMED["HunterGodThreat"]
 tspot = G.NAMED["HunterGodThreatSpot"]
@@ -1276,6 +1326,7 @@ check(far.number.text == "33" and far.glow.shown and not swatch.glow.shown,
 check(any(c.setting == L.OPT_FAR for c in page["range"].controls.values()), "and its switch")
 combat = page["aspects"]
 check(any(c.setting == L.OPT_ASPECT_TEXT for c in combat.controls.values()), "the aspect warning's words have a switch")
+check(any(c.setting == L.OPT_TRUESHOT % "Trueshot Aura" for c in combat.controls.values()), "and Trueshot Aura's reminder too")
 side = next(c for c in page["range"].controls.values() if c.setting == L.OPT_PLATE_SIDE)
 side.scripts.OnClick(side)
 check(db.range.plateSide == "bottom" and side.text == L.PLATE_SIDE.bottom, f"side of the nameplate: {side.text}")
@@ -1309,6 +1360,8 @@ check(all(f.mover.shown and f.mover.width >= 140 and f.mover.height >= 44
           for f in (rspot, asp, ammo, bar, growl, toast, melee, miss, sad, hurt, traps, wrath, tspot)),
       "each one with a big box to drag, even the food bar")
 check(bar.mover.level > 1, "the box sits above the food buttons")
+ts = G.NAMED["HunterGodTrueshot"]
+check(ts.shown and ts.text.text == "1:35" and ts.mover.shown, "Trueshot Aura's reminder shows a sample to move")
 check(not rng.mover and not thr.mover and G.Same(rng.point[2], rspot) and G.Same(thr.point[2], tspot),
       "what you drag is the spot, never anchored to a nameplate, and the displays hang from it")
 rspot.point = lua.table("TOPLEFT", G.UIParent, "TOPLEFT", 300, -200)
@@ -1329,7 +1382,7 @@ check(db.positions["happiness"] is not None, "NOT HAPPY moved off the portrait: 
 slash("lock")
 check(not ns.unlocked and not asp.shown and not ammo.shown and not bar.shown and not growl.shown and not toast.shown
       and not melee.shown and not miss.shown and not sad.shown and not hurt.shown and not traps.shown and not wrath.shown
-      and not thr.shown
+      and not thr.shown and not ts.shown
       and not rspot.mover.shown and not melee.mover.shown,
       "locking hides the samples")
 check(list(rspot.point.values())[2:] == ["TOPLEFT", 300, -200] and list(tspot.point.values())[2:] == ["CENTER", 50, -300],

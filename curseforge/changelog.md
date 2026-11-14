@@ -1,3 +1,7 @@
+# 1.1.0
+
+- Trueshot Aura reminder: its icon with a countdown in its last 2 minutes, grey once it's gone until you cast it again. It keeps counting in combat, when the game hides your buffs. Switch in Combat, Aspects; move it like the other warnings.
+
 # 1.0.9
 
 - The range on the target's nameplate can go above, below, left or right of it, as close or as far as you like (Range, Look: Side of the nameplate and Distance from the nameplate). Below the nameplate, the AGGRO warning moves under it.

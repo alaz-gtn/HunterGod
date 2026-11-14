@@ -144,6 +144,88 @@ fade:SetFromAlpha(1)
 fade:SetToAlpha(0.45)
 fade:SetDuration(0.6)
 
+-- Trueshot Aura lasts 30 minutes: a reminder in its last two, and once it's gone. Forever hides
+-- your buffs in combat, so its end comes from when you last saw it on you or cast it
+local TRUESHOT = { 19506, 20905, 20906 } -- its ranks
+local TRUESHOT_WARN = 120 -- s left when the reminder shows
+local trueshot
+local trueshotName
+local trueshotTime = 1800 -- how long it lasts, as the game said last time
+local trueshotEnds -- GetTime() when it runs out, false when it's not on you, nil while unknown
+local trueshotKnown = false
+
+local function LearnTrueshot()
+	trueshotName = SpellName(TRUESHOT[1])
+	trueshotKnown = false
+	for _, id in ipairs(TRUESHOT) do
+		if Knows(id) then trueshotKnown = true end
+	end
+	-- Forever may give it other ids: the spellbook answers for its name
+	if not trueshotKnown and trueshotName and C_Spell and C_Spell.GetSpellInfo then
+		trueshotKnown = C_Spell.GetSpellInfo(trueshotName) ~= nil
+	end
+end
+
+local function ScanTrueshot()
+	if not trueshotName or not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return end
+	if C_Secrets and C_Secrets.ShouldAurasBeSecret and C_Secrets.ShouldAurasBeSecret() then return end
+	for i = 1, 40 do
+		local aura = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
+		if not aura then break end
+		if ns.IsSecret(aura) or ns.IsSecret(aura.name) then return end
+		if aura.name == trueshotName then
+			local ends, duration = aura.expirationTime, aura.duration
+			if ns.IsSecret(ends) then return end
+			if type(duration) == "number" and not ns.IsSecret(duration) and duration > 0 then trueshotTime = duration end
+			-- No end: it lasts until you cancel it, nothing to remind
+			trueshotEnds = type(ends) == "number" and ends > 0 and ends or math.huge
+			return
+		end
+	end
+	trueshotEnds = false
+end
+
+function ns.UpdateTrueshot()
+	local left
+	if ns.unlocked then
+		if db.trueshot then left = 95 end -- a sample to drag
+	elseif db.trueshot and ns.IsHunter() and trueshotKnown and trueshotEnds ~= nil
+		and not (UnitIsDeadOrGhost and UnitIsDeadOrGhost("player")) then
+		left = trueshotEnds and max(trueshotEnds - GetTime(), 0) or 0
+		if left > TRUESHOT_WARN then left = nil end
+	end
+	if not left then
+		trueshot.pulse:Stop()
+		trueshot:Hide()
+		return
+	end
+	-- Grey once it's gone
+	trueshot.icon:SetDesaturated(left == 0)
+	trueshot.text:SetText(left > 0 and format("%d:%02d", floor(left / 60), floor(left % 60)) or "")
+	trueshot:Show()
+	if not trueshot.pulse:IsPlaying() then trueshot.pulse:Play() end
+end
+
+trueshot = CreateFrame("Frame", "HunterGodTrueshot", UIParent)
+trueshot:SetSize(36, 36)
+trueshot:Hide()
+local trueshotBorder = trueshot:CreateTexture(nil, "BORDER")
+trueshotBorder:SetPoint("TOPLEFT", -2, 2)
+trueshotBorder:SetPoint("BOTTOMRIGHT", 2, -2)
+trueshotBorder:SetColorTexture(1, 0.75, 0.1, 0.9)
+trueshot.icon = trueshot:CreateTexture(nil, "ARTWORK")
+trueshot.icon:SetAllPoints()
+trueshot.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+trueshot.text = trueshot:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+trueshot.text:SetPoint("TOP", trueshot, "BOTTOM", 0, -3)
+trueshot.text:SetTextColor(1, 0.82, 0.2)
+trueshot.pulse = trueshot:CreateAnimationGroup()
+trueshot.pulse:SetLooping("BOUNCE")
+local trueshotFade = trueshot.pulse:CreateAnimation("Alpha")
+trueshotFade:SetFromAlpha(1)
+trueshotFade:SetToAlpha(0.5)
+trueshotFade:SetDuration(0.8)
+
 -- TRAPS READY when the traps are back after one was used in a fight. Traps share their
 -- cooldown; laying one after Feign Death (out of combat for a moment) still counts.
 local TRAPS = { 1499, 13795, 13809, 13813 } -- Freezing, Immolation, Frost and Explosive Trap
@@ -241,11 +323,28 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		end
 		traps:SetWidth(traps.text:GetStringWidth() + 44)
 		ns.Movable(traps, "traps", { "CENTER", "CENTER", 0, -40 }, L.TRAPS_READY)
+		LearnTrueshot()
+		trueshot.icon:SetTexture(SpellIcon(TRUESHOT[1]))
+		for _, font in ipairs({ GameFontNormal:GetFont(), ns.FONTS and ns.FONTS[ns.db.range.font] }) do
+			trueshot.text:SetFont(font, 16, "THICKOUTLINE")
+		end
+		ns.Movable(trueshot, "trueshot", { "CENTER", "CENTER", 160, 120 }, trueshotName or L.TRUESHOT)
+		table.insert(ns.refreshers, ns.UpdateTrueshot)
+		-- Its countdown ticks on its own
+		local clock = CreateFrame("Frame")
+		local since = 0
+		clock:SetScript("OnUpdate", function(_, dt)
+			since = since + dt
+			if since < 0.25 then return end
+			since = 0
+			ns.UpdateTrueshot()
+		end)
 		table.insert(ns.refreshers, ns.UpdateAspect)
 		table.insert(ns.refreshers, ns.UpdateTraps)
 		LearnNames()
 		LearnTrapNames()
 		Scan()
+		ScanTrueshot()
 		self:RegisterUnitEvent("UNIT_AURA", "player")
 		self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 		self:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -254,7 +353,9 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		ns.UpdateAspect()
 	elseif event == "UNIT_AURA" then
 		Scan()
+		ScanTrueshot()
 		ns.UpdateAspect()
+		ns.UpdateTrueshot()
 	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
 		if unit ~= "player" or ns.IsSecret(spellID) then return end
 		local name = spellID and SpellName(spellID)
@@ -263,6 +364,10 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 			ns.UpdateAspect()
 		elseif name and trapNames[name] then
 			TrapUsed(spellID)
+		elseif name and name == trueshotName then
+			trueshotKnown = true
+			trueshotEnds = GetTime() + trueshotTime
+			ns.UpdateTrueshot()
 		end
 	elseif event == "PLAYER_REGEN_DISABLED" then
 		inCombat = true
@@ -271,10 +376,13 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		inCombat = false
 		lastCombat = GetTime()
 		Scan()
+		ScanTrueshot()
 		ns.UpdateAspect()
+		ns.UpdateTrueshot()
 	elseif event == "SPELLS_CHANGED" then
 		LearnNames()
 		LearnTrapNames()
+		LearnTrueshot()
 	end
 end)
 

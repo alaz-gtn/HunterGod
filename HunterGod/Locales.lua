@@ -139,6 +139,8 @@ local L = {
 	TRAPS_READY = "TRAPS READY",
 	OPT_TRAPS = "TRAPS READY when your traps are back after using one in a fight",
 	OPT_FREEZE = "Time left in your %s, beside the frozen mob's nameplate",
+	TRUESHOT = "Trueshot Aura",
+	OPT_TRUESHOT = "Remind me of %s in its last 2 minutes",
 	OPT_MELEE_ALPHA = "MELEE RANGE opacity (%)",
 	THREAT = "AGGRO %d%%",
 	THREAT_PULLED = "YOU HAVE AGGRO!",
@@ -341,6 +343,8 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.TRAPS_READY = "TRAMPAS LISTAS"
 	L.OPT_TRAPS = "TRAMPAS LISTAS cuando vuelvan tus trampas tras usar una en pelea"
 	L.OPT_FREEZE = "Lo que le queda a tu %s, junto a la placa del bicho congelado"
+	L.TRUESHOT = "Aura de disparo certero"
+	L.OPT_TRUESHOT = "Recordarme %s en sus 2 últimos minutos"
 	L.OPT_MELEE_ALPHA = "Opacidad de CUERPO A CUERPO (%)"
 	L.THREAT = "AGRO %d%%"
 	L.THREAT_PULLED = "¡TIENES EL AGRO!"

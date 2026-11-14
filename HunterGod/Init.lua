@@ -41,7 +41,7 @@ local defaults = {
 			out = { r = 0.6, g = 0.6, b = 0.6 },
 		},
 	},
-	aspect = { enabled = true, travel = true, missing = true, preferred = "hawk", text = false },
+	aspect = { enabled = true, travel = true, missing = true, preferred = "hawk", text = false, trueshot = true },
 	traps = { enabled = true, freeze = true },
 	lowAmmo = { enabled = true, threshold = 1000, merchant = true },
 	petFood = { enabled = true, bar = true, hideInCombat = true, low = 10, merchant = true },
