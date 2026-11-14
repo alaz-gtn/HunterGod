@@ -543,6 +543,12 @@ local function Build()
 		function() return range.style end, function(v) range.style = v RangeChanged() end)
 	y = Choice(page, y, L.OPT_POSITION, { { "plate", L.POSITION.plate }, { "free", L.POSITION.free } },
 		function() return range.anchor end, function(v) range.anchor = v RangeChanged() end)
+	y = Choice(page, y, L.OPT_PLATE_SIDE, {
+		{ "top", L.PLATE_SIDE.top }, { "bottom", L.PLATE_SIDE.bottom },
+		{ "left", L.PLATE_SIDE.left }, { "right", L.PLATE_SIDE.right },
+	}, function() return range.plateSide end, function(v) range.plateSide = v RangeChanged() end)
+	y = Slider(page, y, L.OPT_PLATE_GAP, -20, 60, 1, function() return range.plateGap end,
+		function(v) range.plateGap = v RangeChanged() end)
 	y = Slider(page, y, L.OPT_SIZE, 12, 48, 1, function() return range.textSize end, function(v) range.textSize = v RangeChanged() end)
 	Done(page, y)
 

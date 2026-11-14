@@ -184,7 +184,10 @@ local L = {
 	OPT_STYLE = "Style",
 	STYLE = { text = "Text", icon = "Colour square", both = "Square and text" },
 	OPT_POSITION = "Position",
-	POSITION = { plate = "Above the target's nameplate", free = "Where I put it" },
+	POSITION = { plate = "On the target's nameplate", free = "Where I put it" },
+	OPT_PLATE_SIDE = "Side of the nameplate",
+	PLATE_SIDE = { top = "Above", bottom = "Below", left = "Left", right = "Right" },
+	OPT_PLATE_GAP = "Distance from the nameplate",
 	OPT_SIZE = "Size",
 	OPT_ASPECT_ON = "Aspect warnings in combat",
 	OPT_TRAVEL = "Warn about Cheetah or Pack",
@@ -383,7 +386,10 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.OPT_STYLE = "Estilo"
 	L.STYLE = { text = "Texto", icon = "Cuadrado de color", both = "Cuadrado y texto" }
 	L.OPT_POSITION = "Posición"
-	L.POSITION = { plate = "Encima de la placa del objetivo", free = "Donde yo lo ponga" }
+	L.POSITION = { plate = "En la placa del objetivo", free = "Donde yo lo ponga" }
+	L.OPT_PLATE_SIDE = "Lado de la placa"
+	L.PLATE_SIDE = { top = "Encima", bottom = "Debajo", left = "A la izquierda", right = "A la derecha" }
+	L.OPT_PLATE_GAP = "Separación de la placa"
 	L.OPT_SIZE = "Tamaño"
 	L.OPT_ASPECT_ON = "Avisos de aspecto en combate"
 	L.OPT_TRAVEL = "Avisar de Guepardo o Manada"

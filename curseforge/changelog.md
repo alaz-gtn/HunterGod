@@ -1,3 +1,7 @@
+# 1.0.9
+
+- The range on the target's nameplate can go above, below, left or right of it, as close or as far as you like (Range, Look: Side of the nameplate and Distance from the nameplate). Below the nameplate, the AGGRO warning moves under it.
+
 # 1.0.8
 
 - The aspect warning is just its icon now: in colour for Cheetah or Pack in combat, grey for the aspect you're missing. A switch in Combat, Aspects brings the words back.

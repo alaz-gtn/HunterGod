@@ -576,6 +576,26 @@ S.target = lua.table(hostile=True)
 S.plate = G.CreateFrame("Frame")
 range_at(27)
 check(G.Same(rng.point[2], S.plate) and rng.point[1] == "BOTTOM", "sits above the target's nameplate")
+check(rng.point[4] == 0 and rng.point[5] == 2, "2 pixels above it")
+db.range.plateGap = 12
+range_at(27)
+check(G.Same(rng.point[2], S.plate) and rng.point[5] == 12, "further from the nameplate when you ask")
+db.range.plateSide = "bottom"
+range_at(27)
+check(rng.point[1] == "TOP" and rng.point[3] == "BOTTOM" and rng.point[5] == -12, "or under it")
+plate_bar = G.CreateFrame("Frame")
+S.plate.UnitFrame = lua.table(healthBar=plate_bar)
+db.range.plateSide = "left"
+range_at(27)
+check(G.Same(rng.point[2], plate_bar) and rng.point[1] == "RIGHT" and rng.point[4] == -12 and rng.point[5] == 0,
+      "or left of its health bar")
+db.range.plateSide = "right"
+range_at(27)
+check(G.Same(rng.point[2], plate_bar) and rng.point[1] == "LEFT" and rng.point[4] == 12, "or right of it")
+db.range.plateSide = "top"
+db.range.plateGap = 2
+range_at(27)
+check(G.Same(rng.point[2], S.plate) and rng.point[5] == 2, "and back above it")
 S.plate = None
 range_at(27)
 check(G.Same(rng.point[2], rspot), "no nameplate: on its spot, where you put it")
@@ -1147,6 +1167,17 @@ S.plate = G.CreateFrame("Frame")
 ns.UpdateThreat()
 check(thr.shown and thr.text.text == L.THREAT % 92 and G.Same(thr.point[2], S.plate) and thr.point[1] == "TOP",
       f"92% of the pet's threat, as the game's tooltip says (not the scaled 71%): under the nameplate ({thr.text.text})")
+db.range.plateSide = "bottom"
+ns.UpdateThreat()
+check(G.Same(thr.point[2], rng) and thr.point[1] == "TOP" and thr.point[5] == -2,
+      "with the range under the nameplate, the warning goes under the range")
+db.range.showState = True
+ns.UpdateThreat()
+check(thr.point[5] < -2, "and under its state too when it's written")
+db.range.showState = False
+db.range.plateSide = "top"
+ns.UpdateThreat()
+check(G.Same(thr.point[2], S.plate), "and back under the nameplate")
 S.threat = lua.table(False, 1, 74.6, 97)
 ns.UpdateThreat()
 check(thr.shown and thr.text.text == L.THREAT % 97, f"tooltip at 97% at range: it warns ({thr.text.text})")
@@ -1245,6 +1276,16 @@ check(far.number.text == "33" and far.glow.shown and not swatch.glow.shown,
 check(any(c.setting == L.OPT_FAR for c in page["range"].controls.values()), "and its switch")
 combat = page["aspects"]
 check(any(c.setting == L.OPT_ASPECT_TEXT for c in combat.controls.values()), "the aspect warning's words have a switch")
+side = next(c for c in page["range"].controls.values() if c.setting == L.OPT_PLATE_SIDE)
+side.scripts.OnClick(side)
+check(db.range.plateSide == "bottom" and side.text == L.PLATE_SIDE.bottom, f"side of the nameplate: {side.text}")
+for _ in range(3):
+    side.scripts.OnClick(side)
+check(db.range.plateSide == "top", "round all four sides and back above")
+gap = next(c for c in page["range"].controls.values() if c.setting == L.OPT_PLATE_GAP)
+gap.scripts.OnValueChanged(gap, -6.2)
+check(db.range.plateGap == -6, f"distance from the nameplate, closer than touching too: {db.range.plateGap}")
+gap.scripts.OnValueChanged(gap, 2)
 check(any(c.setting == L.OPT_THREAT_PCT for c in combat.controls.values())
       and any(c.setting == L.OPT_MELEE_ALPHA for c in combat.controls.values()),
       "the melee range and aggro warnings sit with the other combat warnings")

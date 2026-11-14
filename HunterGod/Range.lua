@@ -297,11 +297,23 @@ local function TargetPlate()
 	return C_NamePlate.GetNamePlateForUnit("target")
 end
 
+-- On the target's nameplate: above or under it (the whole plate, name and all), or beside its
+-- health bar, as far from it as you choose
+local PLATE_SIDES = {
+	top = { "BOTTOM", "TOP", 0, 1 },
+	bottom = { "TOP", "BOTTOM", 0, -1 },
+	left = { "RIGHT", "LEFT", -1, 0 },
+	right = { "LEFT", "RIGHT", 1, 0 },
+}
+
 local function Anchor(newPlate)
 	plate = newPlate
+	frame.placed = newPlate and (db.plateSide .. db.plateGap) -- placed again when these change
 	frame:ClearAllPoints()
 	if plate then
-		frame:SetPoint("BOTTOM", plate, "TOP", 0, 2)
+		local side = PLATE_SIDES[db.plateSide] or PLATE_SIDES.top
+		local to = side[3] ~= 0 and ns.PlateBar and ns.PlateBar(plate) or plate
+		frame:SetPoint(side[1], to, side[2], side[3] * db.plateGap, side[4] * db.plateGap)
 	else
 		frame:SetPoint("CENTER", rangeSpot)
 	end
@@ -404,7 +416,7 @@ function ns.UpdateRange()
 		return
 	end
 	local newPlate = TargetPlate()
-	if newPlate ~= plate then Anchor(newPlate) end
+	if newPlate ~= plate or (plate and frame.placed ~= db.plateSide .. db.plateGap) then Anchor(newPlate) end
 	if ns.unlocked then
 		-- Samples to drag around
 		if db.enabled then Show("ranged", 30, 35, 32) else frame:Hide() end
@@ -528,13 +540,19 @@ function ns.UpdateThreat()
 		return
 	end
 	-- Placed only when where it hangs changes: placing it on every update undid a drag
-	local plate = not ns.unlocked and C_NamePlate and C_NamePlate.GetNamePlateForUnit
+	local targetPlate = not ns.unlocked and C_NamePlate and C_NamePlate.GetNamePlateForUnit
 		and C_NamePlate.GetNamePlateForUnit("target")
-	if threat.anchor ~= (plate or "free") then
-		threat.anchor = plate or "free"
+	-- With the range under the nameplate, the warning goes under the range (and its state)
+	local under = targetPlate and db.enabled and db.anchor == "plate" and db.plateSide == "bottom"
+		and -(2 + (db.showState and max(floor(db.textSize * 0.45), 8) + 1 or 0))
+	local anchor = under and ("under" .. under) or targetPlate or "free"
+	if threat.anchor ~= anchor then
+		threat.anchor = anchor
 		threat:ClearAllPoints()
-		if plate then
-			threat:SetPoint("TOP", plate, "BOTTOM", 0, -2)
+		if under then
+			threat:SetPoint("TOP", frame, "BOTTOM", 0, under)
+		elseif targetPlate then
+			threat:SetPoint("TOP", targetPlate, "BOTTOM", 0, -2)
 		else
 			threat:SetPoint("CENTER", threatSpot)
 		end

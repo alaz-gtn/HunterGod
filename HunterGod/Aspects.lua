@@ -293,6 +293,7 @@ local function PlateBar(plate)
 		or unitFrame.HealthBarsContainer and unitFrame.HealthBarsContainer.healthBar)
 	return bar or plate
 end
+ns.PlateBar = PlateBar
 
 local function PlaceFreeze(unit)
 	local slot = freezeSlots[tonumber(unit:match("^nameplate(%d+)$") or "")]
