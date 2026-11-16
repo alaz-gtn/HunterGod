@@ -9,9 +9,11 @@ local L = {
 	SELLS_ARROWS = "Sells arrows",
 	SELLS_BULLETS = "Sells bullets",
 	HUNTER_TRAINER = "Hunter trainer",
+	STABLE_MASTER = "Stable master",
 	ARROWS_BOX = "Arrows",
 	BULLETS_BOX = "Bullets",
 	TRAINERS_BOX = "Hunter trainers",
+	STABLES_BOX = "Stable masters",
 	FOOD_BOX = "Pet food",
 	FOOD_VENDOR = "Sells food your pet eats",
 	FOOD_SELLS = "%s up to level %d",
@@ -37,7 +39,7 @@ local L = {
 		bullets = "bullets only",
 		none = "no ammo",
 	},
-	STATUS = "showing %s; hunter trainers %s; %s; minimap %s; continent map %s; %s. Vendors recorded by you: %d.",
+	STATUS = "showing %s; hunter trainers %s; stable masters %s; %s; minimap %s; continent map %s; %s. Vendors recorded by you: %d.",
 	ALL_FACTIONS = "all factions",
 	OWN_FACTION = "your faction only",
 	YES = "on",
@@ -51,6 +53,8 @@ local L = {
 		melee = "Melee",
 		dead = "Dead zone",
 		out = "Out of range",
+		hit = "Melee",
+		approach = "Get closer",
 	},
 	YARDS = "yd",
 	METERS = "m",
@@ -59,6 +63,17 @@ local L = {
 	ASPECT_MISSING = "No %s",
 	ASPECT_NONE = "No aspect",
 	ANY_ASPECT = "Any aspect",
+	-- Ranged or melee (Survival)
+	SEC_PLAYSTYLE = "How you fight",
+	OPT_PLAYSTYLE = "Ranged or melee",
+	PLAYSTYLE = { auto = "By your talents", ranged = "Ranged", melee = "Melee (Survival)" },
+	STYLE_NOW_MELEE = "melee talents: melee mode (your melee aspect, green in melee, no blinking warnings).",
+	STYLE_NOW_RANGED = "no melee talents: back to ranged mode.",
+	STYLE_REPORT = "style: %s, %s.",
+	STYLE_CHOSEN = "chosen in the options",
+	STYLE_FOUND = "by your talents: you know %s",
+	STYLE_NONE = "by your talents: you know none of %s",
+	OPT_PREFERRED_MELEE = "Your aspect in melee",
 	-- Ammo
 	NO_AMMO = "No ammo",
 	AMMO_LOW = "only %d %s left: time to buy more.",
@@ -156,7 +171,7 @@ local L = {
 	OPT_ONLY_HUNTER = "Only on hunters",
 	OPT_RANGE_ON = "Show the range to your target",
 	MELEE_WARNING = "MELEE RANGE",
-	OPT_MELEE_WARNING = "Blinking MELEE RANGE warning when you're in melee",
+	OPT_MELEE_WARNING = "Blinking MELEE RANGE warning when you're in melee (ranged)",
 	OPT_ONLY_COMBAT = "Only in combat",
 	OPT_DISPLAY = "Show",
 	DISPLAY = { number = "A number (estimated)", bracket = "The range between checks" },
@@ -195,7 +210,7 @@ local L = {
 	OPT_TRAVEL = "Warn about Cheetah or Pack",
 	OPT_MISSING = "Warn when your aspect is missing",
 	OPT_ASPECT_TEXT = "Write the warning under the icon",
-	OPT_PREFERRED = "Your combat aspect",
+	OPT_PREFERRED = "Your aspect at range",
 	OPT_AMMO_ON = "Low ammo warning",
 	OPT_THRESHOLD = "Warn below",
 	OPT_MERCHANT = "Remind me at vendors",
@@ -211,9 +226,10 @@ local L = {
 		"  /huntergod pet  - what the addon knows about your pet",
 		"  /huntergod range  - what each range check says about your target",
 		"  /huntergod dr  - log what the game says about diminishing returns",
+		"  /huntergod style  - ranged or melee, and why",
 		"  /ammo arrows | bullets | both | weapon  - which ammo the map shows",
 		"  /ammo nearest  - waypoint to the nearest useful vendor",
-		"  /ammo trainers | food | faction | minimap | continent | class | button  - toggle each option",
+		"  /ammo trainers | stables | food | faction | minimap | continent | class | button  - toggle each option",
 		"  /ammo status  - what the map shows",
 	},
 }
@@ -225,9 +241,11 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.SELLS_ARROWS = "Vende flechas"
 	L.SELLS_BULLETS = "Vende balas"
 	L.HUNTER_TRAINER = "Instructor de cazadores"
+	L.STABLE_MASTER = "Maestro de establos"
 	L.ARROWS_BOX = "Flechas"
 	L.BULLETS_BOX = "Balas"
 	L.TRAINERS_BOX = "Instructores"
+	L.STABLES_BOX = "Establos"
 	L.FOOD_BOX = "Comida de mascota"
 	L.FOOD_VENDOR = "Vende comida que come tu mascota"
 	L.FOOD_SELLS = "%s hasta nivel %d"
@@ -253,7 +271,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 		bullets = "solo balas",
 		none = "ninguna munición",
 	}
-	L.STATUS = "mostrando %s; instructores %s; %s; minimapa %s; mapa del continente %s; %s. Vendedores apuntados por ti: %d."
+	L.STATUS = "mostrando %s; instructores %s; establos %s; %s; minimapa %s; mapa del continente %s; %s. Vendedores apuntados por ti: %d."
 	L.ALL_FACTIONS = "todas las facciones"
 	L.OWN_FACTION = "solo tu facción"
 	L.YES = "sí"
@@ -266,11 +284,23 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 		melee = "Cuerpo a cuerpo",
 		dead = "Zona muerta",
 		out = "Fuera de alcance",
+		hit = "Cuerpo a cuerpo",
+		approach = "Acércate",
 	}
 	L.ASPECT_TRAVEL = "¡%s en combate!"
 	L.ASPECT_MISSING = "Sin %s"
 	L.ASPECT_NONE = "Sin aspecto"
 	L.ANY_ASPECT = "Cualquier aspecto"
+	L.SEC_PLAYSTYLE = "Cómo luchas"
+	L.OPT_PLAYSTYLE = "A distancia o cuerpo a cuerpo"
+	L.PLAYSTYLE = { auto = "Según tus talentos", ranged = "A distancia", melee = "Cuerpo a cuerpo (Supervivencia)" }
+	L.STYLE_NOW_MELEE = "talentos de cuerpo a cuerpo: modo melee (tu aspecto de melee, verde a melee y sin avisos parpadeantes)."
+	L.STYLE_NOW_RANGED = "sin talentos de cuerpo a cuerpo: vuelves al modo a distancia."
+	L.STYLE_REPORT = "estilo: %s, %s."
+	L.STYLE_CHOSEN = "elegido en las opciones"
+	L.STYLE_FOUND = "por tus talentos: conoces %s"
+	L.STYLE_NONE = "por tus talentos: no conoces ninguno de %s"
+	L.OPT_PREFERRED_MELEE = "Tu aspecto en cuerpo a cuerpo"
 	L.NO_AMMO = "Sin munición"
 	L.AMMO_LOW = "solo te quedan %d %s: toca comprar más."
 	L.AMMO_MERCHANT = "este vendedor tiene %s y solo te quedan %d."
@@ -360,7 +390,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.OPT_ONLY_HUNTER = "Solo con cazadores"
 	L.OPT_RANGE_ON = "Mostrar la distancia a tu objetivo"
 	L.MELEE_WARNING = "CUERPO A CUERPO"
-	L.OPT_MELEE_WARNING = "Aviso parpadeante de CUERPO A CUERPO cuando estás a melee"
+	L.OPT_MELEE_WARNING = "Aviso parpadeante de CUERPO A CUERPO cuando estás a melee (a distancia)"
 	L.OPT_ONLY_COMBAT = "Solo en combate"
 	L.OPT_DISPLAY = "Mostrar"
 	L.DISPLAY = { number = "Un número (estimado)", bracket = "El tramo entre medidas" }
@@ -399,7 +429,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.OPT_TRAVEL = "Avisar de Guepardo o Manada"
 	L.OPT_MISSING = "Avisar si te falta tu aspecto"
 	L.OPT_ASPECT_TEXT = "Escribir el aviso debajo del icono"
-	L.OPT_PREFERRED = "Tu aspecto de combate"
+	L.OPT_PREFERRED = "Tu aspecto a distancia"
 	L.OPT_AMMO_ON = "Aviso de poca munición"
 	L.OPT_THRESHOLD = "Avisar por debajo de"
 	L.OPT_MERCHANT = "Recordármelo en los vendedores"
@@ -415,9 +445,10 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 		"  /huntergod mascota  - lo que el addon sabe de tu mascota",
 		"  /huntergod rango  - qué dice cada comprobación de distancia de tu objetivo",
 		"  /huntergod dr  - apuntar lo que dice el juego de los rendimientos decrecientes",
+		"  /huntergod estilo  - a distancia o cuerpo a cuerpo, y por qué",
 		"  /municion flechas | balas | ambas | arma  - qué munición marca el mapa",
 		"  /municion cerca  - ruta al vendedor útil más cercano",
-		"  /municion instructores | comida | faccion | minimapa | continente | clase | boton  - activar o quitar cada opción",
+		"  /municion instructores | establos | comida | faccion | minimapa | continente | clase | boton  - activar o quitar cada opción",
 		"  /municion estado  - qué muestra el mapa",
 	}
 end

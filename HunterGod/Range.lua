@@ -396,9 +396,14 @@ function ns.StyleRange()
 	if ns.StyleThreat then ns.StyleThreat() end
 end
 
--- The blinking MELEE RANGE warning, on its own switch
+-- In melee (Survival) the states say something else: melee is where you want to be, and at
+-- range you have to close in
+local MELEE_STYLE = { melee = "hit", ranged = "approach" }
+
+-- The blinking MELEE RANGE warning, on its own switch. Only for ranged hunters: in melee
+-- (Survival) there's no blinking at all, it was just noise
 local function MeleeWarning(on)
-	if on and db.meleeWarning then
+	if on and db.meleeWarning and not ns.IsMelee() then
 		if not melee:IsShown() then
 			melee:Show()
 			melee.blink:Play()
@@ -417,9 +422,16 @@ function ns.UpdateRange()
 	end
 	local newPlate = TargetPlate()
 	if newPlate ~= plate or (plate and frame.placed ~= db.plateSide .. db.plateGap) then Anchor(newPlate) end
+	local meleeStyle = ns.IsMelee()
 	if ns.unlocked then
 		-- Samples to drag around
-		if db.enabled then Show("ranged", 30, 35, 32) else frame:Hide() end
+		if not db.enabled then
+			frame:Hide()
+		elseif meleeStyle then
+			Show("hit", 0, 5, 3)
+		else
+			Show("ranged", 30, 35, 32)
+		end
 		MeleeWarning(true)
 		return
 	end
@@ -434,9 +446,14 @@ function ns.UpdateRange()
 	local state = ns.RangeState("target")
 	if state and db.enabled then
 		local low, high = ns.RangeDistance("target", state)
-		-- The last five yards of your reach, where you want to stand
-		if state == "ranged" and db.farGlow and low >= FarEdge() then state = "far" end
-		Show(state, low, high, ns.EstimateDistance(GetTime(), low, high))
+		local shown = state
+		if meleeStyle then
+			shown = MELEE_STYLE[state] or state
+		elseif state == "ranged" and db.farGlow and low >= FarEdge() then
+			-- The last five yards of your reach, where you want to stand
+			shown = "far"
+		end
+		Show(shown, low, high, ns.EstimateDistance(GetTime(), low, high))
 	else
 		frame:Hide()
 	end

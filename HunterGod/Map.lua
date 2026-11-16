@@ -6,6 +6,9 @@ local HBDPins = LibStub("HereBeDragons-Pins-2.0")
 
 -- Items whose icons the pins use: Rough Arrow, Light Shot and Haunch of Meat
 local ROUGH_ARROW, LIGHT_SHOT, HAUNCH_OF_MEAT = 2512, 2516, 2287
+-- Call Pet's icon for the stable masters, not the minimap's tracking one: Forever draws
+-- those as stripes
+local CALL_PET = 883
 local PROJECTILE_CLASS = Enum.ItemClass and Enum.ItemClass.Projectile or 6
 local SUBCLASS_ARROW, SUBCLASS_BULLET = 2, 3
 local WEAPON_CLASS = Enum.ItemClass and Enum.ItemClass.Weapon or 2
@@ -23,6 +26,7 @@ local ROUND_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local GetItemInfoInstant = C_Item and C_Item.GetItemInfoInstant or GetItemInfoInstant
 local GetItemInfo = C_Item and C_Item.GetItemInfo or GetItemInfo
 local GetItemIconByID = C_Item and C_Item.GetItemIconByID or GetItemIcon
+local GetSpellTexture = C_Spell and C_Spell.GetSpellTexture or GetSpellTexture
 local englishClient = GetLocale() == "enUS" or GetLocale() == "enGB"
 
 -- Slash command words in English and Spanish
@@ -34,6 +38,7 @@ local AMMO_WORDS = {
 }
 local TOGGLE_WORDS = {
 	trainers = "trainers", instructores = "trainers",
+	stables = "stableMasters", establos = "stableMasters",
 	food = "foodVendors", comida = "foodVendors",
 	faction = "allFactions", faccion = "allFactions", ["facción"] = "allFactions",
 	minimap = "minimap", minimapa = "minimap",
@@ -47,6 +52,7 @@ local playerSide
 local vendors = {} -- bundled data plus what was recorded in game
 local worldPins, minimapPins = {}, {}
 local trainerWorldPins, trainerMinimapPins = {}, {}
+local stableWorldPins, stableMinimapPins = {}, {}
 local foodWorldPins, foodMinimapPins = {}, {}
 local foodShown = 0 -- pet food vendors on the map right now
 local icons = {}
@@ -130,6 +136,7 @@ end
 -- Where each kind of pin gets its NPCs from
 local function Source(kind)
 	if kind == "trainer" then return ns.trainers end
+	if kind == "stable" then return ns.stableMasters end
 	if kind == "food" then return ns.foodVendors end
 	return vendors
 end
@@ -172,6 +179,8 @@ local function Pin_OnEnter(self)
 	GameTooltip:AddLine(NpcName(self.id, v), 1, 1, 1)
 	if self.kind == "trainer" then
 		GameTooltip:AddLine(L.HUNTER_TRAINER, 0.67, 0.83, 0.45)
+	elseif self.kind == "stable" then
+		GameTooltip:AddLine(L.STABLE_MASTER, 0.67, 0.83, 0.45)
 	elseif self.kind == "food" then
 		GameTooltip:AddLine(L.FOOD_VENDOR, 0.67, 0.83, 0.45)
 		local diet, petLevel = ns.PetDiet()
@@ -250,6 +259,14 @@ local function CreateFoodPin(id, size)
 	return pin
 end
 
+local function CreateStablePin(id, size)
+	local pin = CreatePin(id, size, "stable")
+	pin.badge:Hide()
+	pin.icon:SetTexture(icons.stableMasters)
+	Round(pin, pin.icon)
+	return pin
+end
+
 local function CreateTrainerPin(id, size)
 	local pin = CreatePin(id, size, "trainer")
 	pin.badge:Hide()
@@ -278,6 +295,22 @@ local function UpdateFilterPanel(active)
 	end
 end
 
+-- Trainers and stable masters: every one on your side, a bit smaller on the minimap
+local function PlaceAll(list, worldCache, miniCache, create, size, showFlag)
+	for id, n in pairs(list) do
+		if OnMySide(n) then
+			local pin = worldCache[id] or create(id, size)
+			worldCache[id] = pin
+			HBDPins:AddWorldMapIconMap(addonName, pin, n.m, n.x / 100, n.y / 100, showFlag)
+			if db.minimap then
+				local mini = miniCache[id] or create(id, size - 4)
+				miniCache[id] = mini
+				HBDPins:AddMinimapIconMap(addonName, mini, n.m, n.x / 100, n.y / 100, true, false)
+			end
+		end
+	end
+end
+
 local function Refresh()
 	HBDPins:RemoveAllWorldMapIcons(addonName)
 	HBDPins:RemoveAllMinimapIcons(addonName)
@@ -300,17 +333,11 @@ local function Refresh()
 			end
 		end
 	end
-	for id, t in pairs(db.trainers and ns.trainers or {}) do
-		if OnMySide(t) then
-			local pin = trainerWorldPins[id] or CreateTrainerPin(id, 18)
-			trainerWorldPins[id] = pin
-			HBDPins:AddWorldMapIconMap(addonName, pin, t.m, t.x / 100, t.y / 100, showFlag)
-			if db.minimap then
-				local mini = trainerMinimapPins[id] or CreateTrainerPin(id, 14)
-				trainerMinimapPins[id] = mini
-				HBDPins:AddMinimapIconMap(addonName, mini, t.m, t.x / 100, t.y / 100, true, false)
-			end
-		end
+	if db.trainers then
+		PlaceAll(ns.trainers, trainerWorldPins, trainerMinimapPins, CreateTrainerPin, 18, showFlag)
+	end
+	if db.stableMasters then
+		PlaceAll(ns.stableMasters, stableWorldPins, stableMinimapPins, CreateStablePin, 16, showFlag)
 	end
 	-- Only the vendors with food the summoned pet eats; with no pet out, none
 	foodShown = 0
@@ -337,6 +364,7 @@ local FILTERS = {
 	{ key = "arrows", label = "ARROWS_BOX" },
 	{ key = "bullets", label = "BULLETS_BOX" },
 	{ key = "trainers", label = "TRAINERS_BOX" },
+	{ key = "stableMasters", label = "STABLES_BOX" },
 	{ key = "foodVendors", label = "FOOD_BOX" },
 }
 local ROW = 18
@@ -531,6 +559,7 @@ local function PrintStatus()
 	Print(format(L.STATUS,
 		L.MODE[ammo],
 		db.trainers and L.YES or L.NO,
+		db.stableMasters and L.YES or L.NO,
 		db.allFactions and L.ALL_FACTIONS or L.OWN_FACTION,
 		db.minimap and L.YES or L.NO,
 		db.continent and L.YES or L.NO,
@@ -602,6 +631,7 @@ frame:SetScript("OnEvent", function(self, event)
 		icons.bullets = GetItemIconByID(LIGHT_SHOT) or "Interface\\Icons\\INV_Ammo_Bullet_02"
 		-- Not the minimap's food tracking icon: Forever's client draws it as stripes
 		icons.foodVendors = GetItemIconByID(HAUNCH_OF_MEAT) or "Interface\\Icons\\INV_Misc_Food_14"
+		icons.stableMasters = GetSpellTexture(CALL_PET) or "Interface\\Icons\\Ability_Hunter_BeastCall"
 		RebuildVendors()
 		CreateFilterPanel()
 		Refresh()

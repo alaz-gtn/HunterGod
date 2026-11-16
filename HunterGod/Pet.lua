@@ -714,6 +714,42 @@ local function PlaceOverPortrait(self)
 	end
 end
 
+-- Forever hides the pet's health from addons, but lets them hand it on to the game: its
+-- percentage through a curve becomes the warning's opacity (1 under the line, 0 from it up)
+-- and the number in its text, without the addon ever reading it
+local underLine, lineAt, toHundred
+local function HealthCurves()
+	if not (C_CurveUtil and C_CurveUtil.CreateCurve and UnitHealthPercent) then return end
+	local line = statusDB.healthPct / 100
+	if lineAt ~= line then
+		underLine = underLine or C_CurveUtil.CreateCurve()
+		underLine:ClearPoints()
+		if Enum and Enum.LuaCurveType then underLine:SetType(Enum.LuaCurveType.Linear) end
+		-- A sheer drop at the line, so nothing in between
+		underLine:AddPoint(0, 1)
+		underLine:AddPoint(max(line - 0.001, 0.0005), 1)
+		underLine:AddPoint(line, 0)
+		underLine:AddPoint(1, 0)
+		lineAt = line
+	end
+	if not toHundred then
+		toHundred = C_CurveUtil.CreateCurve()
+		if Enum and Enum.LuaCurveType then toHundred:SetType(Enum.LuaCurveType.Linear) end
+		toHundred:AddPoint(0, 0)
+		toHundred:AddPoint(1, 100)
+	end
+	return underLine, toHundred
+end
+
+-- Its width from a sample on a font string of its own: once the real one has shown a
+-- hidden number, its size may be hidden too
+local function SizeHurt()
+	FancyFont(hurt.text, 24, "THICKOUTLINE")
+	FancyFont(hurt.measure, 24, "THICKOUTLINE")
+	hurt.measure:SetText(format(L.PET_HEALTH, 100))
+	hurt:SetWidth(hurt.measure:GetStringWidth() + 44)
+end
+
 function ns.UpdatePetStatus()
 	local pet = ns.IsHunter() and HasPet()
 	if not ns.db.positions.happiness then PlaceOverPortrait(unhappy) end
@@ -724,21 +760,30 @@ function ns.UpdatePetStatus()
 	end
 	Blink(unhappy, sad)
 
-	local percent
+	local percent, hidden
 	if ns.unlocked and statusDB.health then
 		percent = 25
 	elseif pet and statusDB.health then
 		local health, maxHealth = UnitHealth("pet"), UnitHealthMax("pet")
-		-- Forever may hide the pet's health in combat: then there's nothing to say
-		if not ns.IsSecret(health) and not ns.IsSecret(maxHealth) and maxHealth and maxHealth > 0 then
+		if ns.IsSecret(health) or ns.IsSecret(maxHealth) then
+			hidden = HealthCurves() ~= nil
+		elseif maxHealth and maxHealth > 0 then
 			percent = floor(health / maxHealth * 100 + 0.5)
 			if percent >= statusDB.healthPct then percent = nil end
 		end
 	end
+	SizeHurt()
+	if hidden then
+		-- Always there and blinking, seen only while the pet is under the line
+		local line, hundred = HealthCurves()
+		hurt:SetAlpha(UnitHealthPercent("pet", false, line))
+		hurt.text:SetFormattedText(L.PET_HEALTH, UnitHealthPercent("pet", false, hundred))
+		Blink(hurt, true)
+		return
+	end
+	hurt:SetAlpha(1)
 	if percent then
 		hurt.text:SetText(format(L.PET_HEALTH, percent))
-		FancyFont(hurt.text, 24, "THICKOUTLINE")
-		hurt:SetWidth(hurt.text:GetStringWidth() + 44)
 	end
 	Blink(hurt, percent ~= nil)
 end
@@ -764,14 +809,20 @@ BlinkGroup(unhappy, 0.2, 0.5)
 hurt = CreateFrame("Frame", "HunterGodPetHealth", UIParent)
 hurt:SetSize(220, 36)
 hurt:Hide()
-hurt.icon = hurt:CreateTexture(nil, "ARTWORK")
+-- What blinks goes on a frame inside: the outer one may take its opacity from the pet's health
+hurt.body = CreateFrame("Frame", nil, hurt)
+hurt.body:SetAllPoints()
+hurt.icon = hurt.body:CreateTexture(nil, "ARTWORK")
 hurt.icon:SetSize(32, 32)
 hurt.icon:SetPoint("LEFT")
 hurt.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-hurt.text = hurt:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+hurt.text = hurt.body:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 hurt.text:SetPoint("LEFT", hurt.icon, "RIGHT", 8, 0)
 hurt.text:SetTextColor(1, 0.4, 0.1)
-BlinkGroup(hurt, 0.45, 0.6)
+hurt.measure = hurt:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+hurt.measure:Hide()
+BlinkGroup(hurt.body, 0.45, 0.6)
+hurt.blink = hurt.body.blink
 
 local statusEvents = CreateFrame("Frame")
 statusEvents:RegisterEvent("PLAYER_LOGIN")

@@ -74,10 +74,12 @@ end
 
 -- The aspect to warn about when it's missing, or nil
 local function Wanted()
-	if db.preferred == "any" then return "any" end
-	if Knows(ns.ASPECTS[db.preferred]) then return db.preferred end
-	-- Below level 10 there is no Hawk yet
-	if db.preferred == "hawk" and Knows(ns.ASPECTS.monkey) then return "monkey" end
+	-- In melee (Survival) its own aspect
+	local preferred = ns.IsMelee() and db.melee or db.preferred
+	if preferred == "any" then return "any" end
+	if Knows(ns.ASPECTS[preferred]) then return preferred end
+	-- Below level 10 there is no Hawk yet, nor Beast before you learn it: Monkey till then
+	if (preferred == "hawk" or preferred == "beast") and Knows(ns.ASPECTS.monkey) then return "monkey" end
 end
 
 local function Warn(key, text, missing)

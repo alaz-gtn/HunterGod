@@ -10,6 +10,7 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 - The game only tells addons whether a target is within a few fixed distances; the number is estimated from when your target crosses them and how fast. You can show the range between checks instead ("30-35 yd").
 - A big, round font with a thick black outline (Fredoka, or Changa, or the game's font).
 - A blinking red **MELEE RANGE** warning when you're in melee of your target, as see-through as you like, that you can move anywhere.
+- **Survival:** with melee talents (or by choice in the options) the range turns around: green in melee, yellow "Get closer" further out, no blinking warnings, and the aspect warning asks for your melee aspect.
 - **AGGRO 92%** under the target's nameplate when you're about to pull it off your pet (from 90%, or wherever you set it), and **YOU HAVE AGGRO!** when you do. Only with your pet out or in a group.
 - Above the target's **nameplate**, or anywhere you put it. Pick the size and the colour of each state.
 
@@ -36,11 +37,11 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 - **Bestial Wrath** on your pet's portrait with the seconds it has left.
 - **Level ups:** a toast with your pet's portrait when it levels up or earns training points, and how many it has to spend.
 
-## Vendors and trainers on the map
+## Vendors, trainers and stable masters on the map
 
-- **117 arrow and bullet vendors** and **29 hunter trainers** on the zone map, the continent map and the minimap.
+- **117 arrow and bullet vendors**, **29 hunter trainers** and **46 stable masters** on the zone map, the continent map and the minimap.
 - **Pet food vendors**: only the ones that sell food the pet you have out eats, at a level it still likes.
-- Checkboxes in the corner of the world map to show or hide arrows, bullets, trainers and pet food.
+- Checkboxes in the corner of the world map to show or hide arrows, bullets, trainers, stable masters and pet food.
 - Vendors that only sell ammo below your level are greyed out. Click a pin to set a waypoint (TomTom too).
 - `/ammo nearest` sets a waypoint to the closest vendor that is still useful at your level.
 - **Learns as you play:** open a merchant that sells ammo and isn't on the map, and it gets added. This is how the new Forever zones fill in.
@@ -52,20 +53,21 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 | `/huntergod` | Opens the options |
 | `/huntergod unlock`, `/huntergod lock` | Move the displays (or right-click the minimap button) |
 | `/huntergod meters`, `/huntergod yards` | The range in metres or yards |
+| `/huntergod style` | Ranged or melee (Survival), and why |
 | `/ammo arrows`, `/ammo bullets`, `/ammo both`, `/ammo weapon` | Which ammo the map shows |
 | `/ammo nearest` | Waypoint to the nearest useful vendor |
-| `/ammo trainers`, `/ammo food`, `/ammo faction`, `/ammo minimap`, `/ammo continent`, `/ammo class` | Toggle each map option |
+| `/ammo trainers`, `/ammo stables`, `/ammo food`, `/ammo faction`, `/ammo minimap`, `/ammo continent`, `/ammo class` | Toggle each map option |
 | `/ammo button` | Show or hide the minimap button |
 
 ## About the data
 
-The vendor and trainer lists come from [QuestieDB](https://github.com/Questie/QuestieDB) and the pet food list from the [cmangos Classic database](https://github.com/cmangos/classic-db), both under the GPLv3.
+The vendor, trainer and stable master lists come from [QuestieDB](https://github.com/Questie/QuestieDB) and the pet food list from the [cmangos Classic database](https://github.com/cmangos/classic-db), both under the GPLv3.
 
 Found a vendor that's missing or in the wrong place? Leave a comment with its name and coordinates.
 
 ## Credits
 
-- Vendor and trainer data: [QuestieDB](https://github.com/Questie/QuestieDB) by the Questie team (GPLv3).
+- Vendor, trainer and stable master data: [QuestieDB](https://github.com/Questie/QuestieDB) by the Questie team (GPLv3).
 - Pet food data: [cmangos classic-db](https://github.com/cmangos/classic-db) (GPLv3).
 - Range-check items: from [LibRangeCheck-3.0](https://github.com/WeakAuras/LibRangeCheck-3.0) (MIT). The distance estimate follows the idea of [Good Range](https://www.curseforge.com/wow/addons/good-range).
 - Fonts: [Fredoka One](https://github.com/hafontia/Fredoka-One) by Milena Brandão and [Changa](https://github.com/googlefonts/changa-vf) by Eduardo Tunni, both under the SIL Open Font License 1.1 (included).
@@ -81,6 +83,7 @@ HunterGod is licensed under the GNU GPL v3 or later.
 **HunterGod** son mejoras para cazadores en WoW Forever. Todo se configura desde el **botón del minimapa** (o `/huntergod`) en una ventana de opciones con vista previa de la distancia, y cada aviso se puede arrastrar donde quieras.
 
 - **Aviso de cuerpo a cuerpo:** un CUERPO A CUERPO rojo que parpadea cuando estás a melee de tu objetivo; se puede mover.
+- **Supervivencia:** con talentos de cuerpo a cuerpo (o eligiéndolo en las opciones) la distancia se da la vuelta: verde a melee, amarillo "Acércate" más lejos, sin avisos parpadeantes, y el aviso de aspecto pide tu aspecto de melee. `/huntergod estilo` dice en qué modo estás y por qué.
 - **Aviso de agro:** AGRO 92% bajo la placa del objetivo cuando estás a punto de quitarle el bicho a tu mascota (desde el 90%, o desde donde lo pongas), y ¡TIENES EL AGRO! cuando se lo quitas. Solo con la mascota fuera o en grupo.
 - **Distancia al objetivo:** un número en yardas o metros (por ejemplo "32 yd") con letra redondeada y contorno negro, del color de a distancia, cuerpo a cuerpo, zona muerta o fuera de alcance, encima de la placa del objetivo o donde lo pongas. Eliges el estilo, el tamaño y los colores.
 - **Aspectos:** te avisa si estás en combate con el Aspecto del guepardo o de la manada, o si te falta tu aspecto de combate.
@@ -92,5 +95,5 @@ HunterGod is licensed under the GNU GPL v3 or later.
 - **NO ESTÁ CONTENTA** parpadea sobre el retrato de tu mascota si no está contenta, y **¡CURA A TU MASCOTA!** sale cuando le baja la vida del porcentaje que elijas.
 - **Cólera de las bestias** en el retrato de tu mascota, con los segundos que le quedan.
 - **Subidas de nivel:** un aviso con el retrato de tu mascota cuando sube de nivel o gana puntos de entrenamiento, y cuántos tiene para gastar.
-- **Mapa:** vendedores de flechas y balas, instructores de cazadores y vendedores de comida para tu mascota, con casillas en la esquina del mapa del mundo para elegir qué se ve.
-- Comandos: `/huntergod` (opciones), `/huntergod desbloquear | bloquear`, `/municion flechas | balas | ambas | arma | instructores | comida | cerca | faccion | minimapa | continente | clase | boton`.
+- **Mapa:** vendedores de flechas y balas, instructores de cazadores, maestros de establos y vendedores de comida para tu mascota, con casillas en la esquina del mapa del mundo para elegir qué se ve.
+- Comandos: `/huntergod` (opciones), `/huntergod desbloquear | bloquear`, `/municion flechas | balas | ambas | arma | instructores | establos | comida | cerca | faccion | minimapa | continente | clase | boton`.

@@ -26,7 +26,9 @@ strsplit = function(sep, s) local out = {} for part in (s .. sep):gmatch("(.-)" 
 GetLocale = function() return LOCALE end
 -- A value the game hides from addons
 SECRET = {}
-issecretvalue = function(v) return v == SECRET end
+-- A hidden value that still carries what it hides, for the game's own setters to use
+function Hidden(v) return { hidden = v } end
+issecretvalue = function(v) return v == SECRET or (type(v) == "table" and v.hidden ~= nil) end
 
 local mapNames = { [1411] = "Durotar", [1454] = "Orgrimmar", [2548] = "Riverglades", [1429] = "Elwynn Forest" }
 SPELLS = { [75] = "Auto Shot", [2973] = "Raptor Strike", [2974] = "Wing Clip", [6991] = "Feed Pet",
@@ -34,6 +36,7 @@ SPELLS = { [75] = "Auto Shot", [2973] = "Raptor Strike", [2974] = "Wing Clip", [
   [5118] = "Aspect of the Cheetah", [13159] = "Aspect of the Pack", [13161] = "Aspect of the Beast", [20043] = "Aspect of the Wild",
   [2649] = "Growl", [14921] = "Growl", [430] = "Drink", [433] = "Food", [19574] = "Bestial Wrath",
   [19506] = "Trueshot Aura", [20906] = "Trueshot Aura",
+  [1317257] = "Strider Kick", [1310627] = "Predator's Edge", [1310532] = "Expose Prey",
   [1499] = "Freezing Trap", [14311] = "Freezing Trap", [13795] = "Immolation Trap", [13809] = "Frost Trap", [13813] = "Explosive Trap" }
 
 -- Game state the tests change
@@ -53,6 +56,24 @@ SetPortraitTexture = function() end
 GetPetHappiness = function() if G.pet then return G.pet.happy or 3 end end
 UnitHealth = function(u) if u == "pet" and G.pet then return G.pet.hp or 100 end return 100 end
 UnitHealthMax = function(u) if u == "pet" and G.pet then return G.pet.maxhp or 100 end return 100 end
+-- Forever's way round the hidden health: the percentage through a curve, still hidden
+UnitHealthPercent = function(u, predicted, curve)
+  local x = (G.pet.realhp or 100) / (G.pet.maxhp or 100)
+  return Hidden(curve and curve:Evaluate(x) or x) end
+C_CurveUtil = { CreateCurve = function()
+  local c = { points = {} }
+  function c:SetType(t) self.type = t end
+  function c:ClearPoints() self.points = {} end
+  function c:AddPoint(x, y) table.insert(self.points, { x, y }) table.sort(self.points, function(a, b) return a[1] < b[1] end) end
+  function c:Evaluate(x)
+    local p = self.points
+    if x <= p[1][1] then return p[1][2] end
+    for i = 2, #p do
+      if x <= p[i][1] then local a, b = p[i - 1], p[i] return a[2] + (x - a[1]) * (b[2] - a[2]) / (b[1] - a[1]) end
+    end
+    return p[#p][2]
+  end
+  return c end }
 UnitIsUnit = function(a, b) if a == "pettargettarget" and b == "pet" then return G.mobOnPet end return false end
 UnitExists = function(u) if u == "target" then return G.target ~= nil end if u == "pet" then return G.pet ~= nil end
   if u == "pettarget" then return G.petTarget end return true end
@@ -163,6 +184,10 @@ local function Texture() local t = { shown = true } setmetatable(t, { __index = 
   elseif k == "SetTexture" then self.tex = ... elseif k == "SetDesaturated" then self.desat = ...
   elseif k == "SetColorTexture" or k == "SetTextColor" then self.color = { ... }
   elseif k == "SetText" then self.text = ... elseif k == "GetStringWidth" then return #tostring(self.text or "") * 6
+  elseif k == "SetFormattedText" then
+    local args = { ... }
+    for i = 2, #args do if type(args[i]) == "table" then args[i] = args[i].hidden self.hiddenText = true end end
+    self.text = format(unpack(args))
   elseif k == "SetFont" then self.font = { ... }
   elseif k == "GetText" then return self.text
   elseif k == "AddMaskTexture" then self.maskTexture = ...
@@ -183,7 +208,7 @@ function CreateFrame(kind, name, parent, template)
   function f:UnregisterEvent(e) self.events[e] = nil end
   function f:CreateTexture() return Texture() end
   function f:CreateFontString() return Texture() end
-  function f:SetAlpha(a) self.alpha = a end
+  function f:SetAlpha(a) self.hiddenAlpha = type(a) == "table" self.alpha = self.hiddenAlpha and a.hidden or a end
   function f:SetShown(v) self.shown = v and true or false end
   function f:Hide() self.shown = false end function f:Show() self.shown = true end
   function f:IsShown() return self.shown end
@@ -331,6 +356,10 @@ trainers = ns.trainers
 n_trainers = len(list(trainers.keys()))
 check(n_trainers > 20 and all(t.m and 0 <= t.x <= 100 and 0 <= t.y <= 100 and t.side in ("A", "H") and t.name
                               for t in trainers.values()), f"Data.lua: {n_trainers} hunter trainers with map, coordinates, side and name")
+stables = ns.stableMasters
+n_stables = len(list(stables.keys()))
+check(n_stables > 30 and all(t.m and 0 <= t.x <= 100 and 0 <= t.y <= 100 and t.side in ("A", "H", "B") and t.name
+                             for t in stables.values()), f"Data.lua: {n_stables} stable masters with map, coordinates, side and name")
 foods = ns.petFoods
 check(len(list(foods.keys())) > 150 and all(1 <= f.t <= 6 and f.l >= 0 for f in foods.values()),
       f"PetFood.lua: {len(list(foods.keys()))} foods with type and level")
@@ -360,30 +389,52 @@ check(tip[0] == "Thotar" and tip[1] == ("Instructor de cazadores" if es else "Hu
 G.FindPin(3171, "trainer").scripts.OnClick(G.FindPin(3171, "trainer"))
 check(S.waypoint is not None and S.waypoint.m == 1411, "clicking a trainer pin sets a waypoint")
 S.waypoint = None
+ssides = {stables[i].side for i in pin_ids("stable")}
+check(len(pin_ids("stable")) > 10 and "A" not in ssides, f"Horde: {len(pin_ids('stable'))} stable master pins, none Alliance-only")
+check(9987 in pin_ids("stable") and 9978 not in pin_ids("stable"), "Shoja'my in Razor Hill yes, Wesley in Stormwind no")
+stable_pin = G.FindPin(9987, "stable")
+check(stable_pin.icon.tex == 883 and stable_pin.icon.maskTexture is not None,
+      "stable masters: Call Pet's icon cut round")
+tip = tooltip(9987, "stable")
+print("     stable master tooltip:", tip)
+check(tip[0] == "Shoja'my" and tip[1] == L.STABLE_MASTER, "stable master tooltip shows name and role")
+stable_pin.scripts.OnClick(stable_pin)
+check(S.waypoint is not None and S.waypoint.m == 1411, "clicking a stable master sets a waypoint")
+S.waypoint = None
 
 # Checkboxes on the world map
 panel = G.Panel()
 check(panel is not None and panel.shown and boxes() == {"arrows": True, "bullets": True, "trainers": True},
       "map checkboxes shown, all ticked")
-check([b.key for b in panel.boxes.values()] == ["arrows", "bullets", "trainers", "foodVendors"],
-      "boxes in order: arrows, bullets, trainers, pet food")
+check([b.key for b in panel.boxes.values()] == ["arrows", "bullets", "trainers", "stableMasters", "foodVendors"],
+      "boxes in order: arrows, bullets, trainers, stable masters, pet food")
+check(G.Box("stableMasters").checked, "stable masters ticked to start with")
 check(len(pin_ids("food")) == 0, "no pet out: no pet food vendors")
 check(panel.clamped and panel.level == 2100 and G.WorldMapFrame.hooks["OnShow"] is not None, f"panel above the topmost map pin level: {panel.level}")
 G.Click("arrows")
 check(not db.arrows and all(data[i].bullets for i in vendor_ids()) and len(trainer_ids()) > 0,
       "unticking arrows: only bullet vendors, trainers stay")
 G.Click("trainers")
-check(len(trainer_ids()) == 0 and G.CountMini() == len(vendor_ids()), "unticking trainers removes them from both maps")
+check(len(trainer_ids()) == 0 and G.CountMini() == len(vendor_ids()) + len(pin_ids("stable")),
+      "unticking trainers removes them from both maps")
+G.Click("stableMasters")
+check(len(pin_ids("stable")) == 0 and not db.stableMasters and G.CountMini() == len(vendor_ids()),
+      "unticking stable masters removes them from both maps")
 G.Click("bullets")
 check(G.CountWorld()[0] == 0, "nothing ticked: no pins")
 out = slash("estado" if es else "status")
 check(("ninguna munición" if es else "no ammo") in out[0], f"status with nothing ticked: {out[0]}")
-G.Click("arrows"); G.Click("bullets"); G.Click("trainers")
+G.Click("arrows"); G.Click("bullets"); G.Click("trainers"); G.Click("stableMasters")
 check(boxes() == {"arrows": True, "bullets": True, "trainers": True} and len(trainer_ids()) > 0, "ticking everything back")
 slash("instructores" if es else "trainers")
 check(not G.Box("trainers").checked and len(trainer_ids()) == 0, "trainers command unticks the box")
 slash("trainers")
 check(G.Box("trainers").checked, "and ticks it again")
+out = slash("establos" if es else "stables")
+check(not G.Box("stableMasters").checked and len(pin_ids("stable")) == 0
+      and (("establos no" if es else "stable masters off") in out[0]), f"stables command unticks the box: {out[0]}")
+slash("stables")
+check(G.Box("stableMasters").checked and len(pin_ids("stable")) > 10, "and ticks it again")
 
 # Low level vendor tooltip (Durotar, useful up to 10)
 low = next(i for i in vendor_ids() if data[i].m == 1411 and data[i].upTo == 10)
@@ -649,6 +700,55 @@ check(range_at(3) == f"0-5 {yd}" and melee.shown, "at 3 yd it is melee")
 S.meleeLies = False
 range_at(27)
 
+# Melee (Survival): known by its talents, and the range says something else
+check(not ns.IsMelee(), "no melee talents: ranged")
+printed.clear()
+S.known[1317257] = True  # Strider Kick
+G.Fire("SPELLS_CHANGED")
+said = [p for p in printed if L.STYLE_NOW_MELEE in p]
+check(ns.IsMelee() and len(said) == 1, f"Strider Kick learned: melee, and the chat says so: {printed}")
+G.Fire("SPELLS_CHANGED")
+check(len([p for p in printed if L.STYLE_NOW_MELEE in p]) == 1, "said only once")
+db.range.showState = True
+S.combat = False
+check(range_at(3) == f"0-5 {yd}" and colour()[:2] == (0.3, 1) and rng.state.text == L.RANGE.hit and not melee.shown,
+      f"in melee green and no MELEE RANGE: where you want to be ({rng.state.text})")
+check(range_at(27) == f"25-28 {yd}" and colour()[:2] == (1, 0.82) and rng.state.text == L.RANGE.approach
+      and not melee.shown, f"at range yellow, get closer; out of combat no warning ({rng.state.text})")
+range_at(33)
+check(not rng.glow.shown and colour()[:2] == (1, 0.82), "no max range glow in melee")
+S.combat = True
+blinked = False
+for d in (3, 6, 27, 50):
+    range_at(d)
+    blinked = blinked or melee.shown
+check(not blinked and colour()[:2] == (0.6, 0.6), "in combat, near or far: no blinking warning at all in melee")
+check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2), "the dead zone still red")
+S.combat = False
+ns.SetUnlocked(True)
+check(not melee.shown, "nor a sample of it to move")
+ns.SetUnlocked(False)
+out = slash("estilo" if es else "style")
+check(len(out) == 1 and L.PLAYSTYLE.melee in out[0] and "Strider Kick" in out[0], f"/huntergod style: {out}")
+db.playstyle = "ranged"
+range_at(3)
+check(not ns.IsMelee() and melee.shown and melee.text.text == L.MELEE_WARNING,
+      "ranged chosen in the options: the talents don't matter, MELEE RANGE again")
+out = slash("style")
+check(len(out) == 1 and L.STYLE_CHOSEN in out[0], f"and the command says why: {out}")
+db.playstyle = "auto"
+S.combat = False
+printed.clear()
+S.known[1317257] = False
+G.Fire("SPELLS_CHANGED")
+said = [p for p in printed if L.STYLE_NOW_RANGED in p]
+check(not ns.IsMelee() and len(said) == 1, f"talents reset: back to ranged: {printed}")
+out = slash("style")
+check(len(out) == 1 and L.PLAYSTYLE.ranged in out[0] and "Strider Kick" in out[0] and "Expose Prey" in out[0],
+      f"and which talents it looked for: {out}")
+db.range.showState = False
+range_at(27)
+
 # One number, like GoodRange: exact at each crossing, carried at the closing rate in between
 db.range.display = "number"
 S.speed = lua.table(player=0, target=0)
@@ -723,6 +823,25 @@ G.Fire("UNIT_AURA", "player")
 G.Fire("PLAYER_REGEN_DISABLED")
 check(asp.shown and asp.icon.desat, "no aspect at all in combat: warns")
 G.Fire("PLAYER_REGEN_ENABLED")
+# In melee (Survival) its own aspect
+db.playstyle = "melee"
+G.Fire("PLAYER_REGEN_DISABLED")
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 25296)  # Hawk
+check(asp.shown and "Monkey" in asp.text.text, f"melee, before Beast is learned: Monkey ({asp.text.text})")
+S.known[13161] = True
+ns.UpdateAspect()
+check(asp.shown and "Beast" in asp.text.text and asp.icon.desat, f"melee with Beast learned: Beast, not Hawk ({asp.text.text})")
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 13161)
+check(ns.CurrentAspect() == "beast" and not asp.shown, "with Beast up, nothing to say")
+db.aspect.melee = "hawk"
+ns.UpdateAspect()
+check(asp.shown and "Hawk" in asp.text.text, "the melee aspect is yours to choose")
+db.aspect.melee = "beast"
+db.playstyle = "auto"
+ns.UpdateAspect()
+check(asp.shown and "Hawk" in asp.text.text, "without melee talents, Hawk again")
+G.Fire("PLAYER_REGEN_ENABLED")
+S.known[13161] = False
 
 # ---------------------------------------------------------------- Traps ready
 traps = G.NAMED["HunterGodTraps"]
@@ -1104,9 +1223,29 @@ check(not hurt.shown, "55%: above the 40% line")
 db.petStatus.healthPct = 60
 ns.UpdatePetStatus()
 check(hurt.shown and hurt.text.text == L.PET_HEALTH % 55, "the line can be raised")
-S.pet.hp = G.SECRET
+# Forever hides the pet's health: the game itself turns it into the warning's opacity and number
+S.pet.hp, S.pet.realhp = G.SECRET, 30
 ns.UpdatePetStatus()
-check(not hurt.shown, "health hidden by the game: nothing")
+check(hurt.shown and hurt.hiddenAlpha and hurt.alpha == 1 and hurt.text.hiddenText and hurt.text.text == L.PET_HEALTH % 30,
+      f"hidden health, 30%: seen, with its number ({hurt.text.text})")
+check(hurt.width == len((L.PET_HEALTH % 100).encode("utf-8")) * 6 + 44, "its width from a sample, not from the hidden text")
+S.pet.realhp = 75
+ns.UpdatePetStatus()
+check(hurt.shown and hurt.alpha == 0, "hidden health, 75%: there but not seen")
+S.pet.realhp = 60
+ns.UpdatePetStatus()
+check(hurt.alpha == 0, "right at the 60% line: not seen")
+S.pet.realhp = 59
+ns.UpdatePetStatus()
+check(hurt.alpha == 1 and hurt.text.text == L.PET_HEALTH % 59, "just under it: seen")
+db.petStatus.healthPct = 40
+ns.UpdatePetStatus()
+check(hurt.alpha == 0, "the line moved down to 40%: not seen")
+db.petStatus.healthPct = 60
+S.pet.hp, S.pet.realhp = 20, None
+ns.UpdatePetStatus()
+check(hurt.shown and not hurt.hiddenAlpha and hurt.alpha == 1 and hurt.text.text == L.PET_HEALTH % 20,
+      "health readable again: the plain way, fully seen")
 S.pet.hp, S.pet.happy = 20, 1
 db.petStatus.happy, db.petStatus.health = False, False
 ns.UpdatePetStatus()
@@ -1284,6 +1423,7 @@ win, pages = ns.OptionsWindow()
 page = {p.key: p for p in pages.values()}
 check(page["map"].shown and not page["range"].shown, "the map page first")
 arrows_box = page["map"].controls[1]
+check(any(c.setting == L.STABLES_BOX for c in page["map"].controls.values()), "the options have a stable masters box")
 arrows_box.checked = False
 arrows_box.scripts.OnClick(arrows_box)
 check(not db.arrows and all((db.learned[i] or data[i]).bullets for i in vendor_ids()), "the options' arrows box filters the map")
@@ -1342,6 +1482,20 @@ check(any(c.setting == L.OPT_THREAT_PCT for c in combat.controls.values())
       "the melee range and aggro warnings sit with the other combat warnings")
 ns.ShowOptionsPage("aspects")
 check(combat.shown and not page["range"].shown, "the menu goes to another page")
+how = next(c for c in combat.controls.values() if c.setting == L.OPT_PLAYSTYLE)
+check(how.text == L.PLAYSTYLE.auto, f"ranged or melee: by your talents to start with ({how.text})")
+how.scripts.OnClick(how)
+how.scripts.OnClick(how)
+check(db.playstyle == "melee" and how.text == L.PLAYSTYLE.melee and ns.IsMelee(), f"or melee, by hand: {how.text}")
+check(any(c.setting == L.OPT_PREFERRED_MELEE for c in combat.controls.values()), "with its own aspect")
+ns.ShowOptionsPage("range")
+closer = next(c for c in page["range"].controls.values() if c.setting == L.RANGE.approach)
+check(closer.shown and closer.number.text == "28" and not swatch.shown and not far.shown,
+      "in melee the preview has get closer instead of in range and max range")
+how.scripts.OnClick(how)
+check(db.playstyle == "auto" and how.text == L.PLAYSTYLE.auto, "and round to by your talents again")
+ns.ShowOptionsPage("range")
+check(swatch.shown and far.shown and not closer.shown, "the preview back as it was")
 ns.ShowOptionsPage("range")
 ns.ShowOptionsPage("pet")
 low_slider = next(c for c in page["pet"].controls.values() if c.setting == L.OPT_PET_LOW)

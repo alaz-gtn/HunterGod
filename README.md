@@ -1,6 +1,6 @@
 # HunterGod
 
-Addon de mejoras para cazadores en WoW Forever: distancia al objetivo, avisos de aspecto, de munición y de comida de la mascota, y vendedores de munición e instructores en el mapa. Se publica en CurseForge con el autor **wowforeverplus**.
+Addon de mejoras para cazadores en WoW Forever: distancia al objetivo, avisos de aspecto, de munición y de comida de la mascota, y vendedores de munición, instructores y maestros de establos en el mapa. Se publica en CurseForge con el autor **wowforeverplus**.
 
 ## Carpetas
 
@@ -13,7 +13,7 @@ Addon de mejoras para cazadores en WoW Forever: distancia al objetivo, avisos de
 
 1. Cambia `## Version:` en `HunterGod/HunterGod.toc` y añade la entrada en `curseforge/changelog.md`.
 2. Si cambia la comida de mascota: descarga el `Full_DB/ClassicDB_*.sql.gz` de [cmangos/classic-db](https://github.com/cmangos/classic-db) y ejecuta `python -I tools/gen_petfood.py <ese .sql.gz> HunterGod/PetFood.lua`.
-3. Si cambian los vendedores, los instructores o la comida de mascota: descarga de [QuestieDB](https://github.com/Questie/QuestieDB) `data/Forever/foreverItemDB.lua`, `data/Forever/foreverNpcDB.lua` y `support/Forever/Zones/areaIdToUiMapId.lua` en una carpeta, y ejecuta `python -I tools/gen_questie.py <esa carpeta> HunterGod/Data.lua HunterGod/PetFood.lua` (necesita `pip install lupa`). Los vendedores de comida salen de cruzar `PetFood.lua` con QuestieDB.
+3. Si cambian los vendedores, los instructores, los establos o la comida de mascota: descarga de [QuestieDB](https://github.com/Questie/QuestieDB) `data/Forever/foreverItemDB.lua`, `data/Forever/foreverNpcDB.lua` y `support/Forever/Zones/areaIdToUiMapId.lua` en una carpeta, y ejecuta `python -I tools/gen_questie.py <esa carpeta> HunterGod/Data.lua HunterGod/PetFood.lua` (necesita `pip install lupa`). Los vendedores de comida salen de cruzar `PetFood.lua` con QuestieDB.
 4. Prueba: `python -I tools/test_addon.py HunterGod enUS` y lo mismo con `esES`.
 5. Si cambias el logo: `python -I tools/make_logo.py curseforge/logo.png HunterGod/media/icon.tga` (necesita `pip install pillow`).
 6. Publica: haz commit, crea la etiqueta `v<versión>` y súbela (`git tag v1.0.2` y `git push origin main v1.0.2`). GitHub Actions (`.github/workflows/release.yml`) prueba el addon en los dos idiomas y lo sube a CurseForge con su nota de cambios (`tools/publish.py`, con la clave de CurseForge en el secreto `CF_API_KEY` del repositorio). Para ver el zip sin subirlo: `python -I tools/build_zip.py`, o `python -I tools/publish.py --dry-run`.

@@ -7,6 +7,7 @@ local defaults = {
 	arrows = true,
 	bullets = true,
 	trainers = true,
+	stableMasters = true,
 	foodVendors = true,
 	allFactions = false,
 	minimap = true,
@@ -15,6 +16,7 @@ local defaults = {
 	learned = {},
 	notAmmo = {},
 	names = {},
+	playstyle = "auto", -- auto | ranged | melee: Survival fights in melee
 	-- Range to the target
 	range = {
 		enabled = true,
@@ -39,9 +41,12 @@ local defaults = {
 			melee = { r = 1, g = 0.82, b = 0 },
 			dead = { r = 1, g = 0.2, b = 0.2 },
 			out = { r = 0.6, g = 0.6, b = 0.6 },
+			-- Melee style (Survival): melee is where you want to be, at range you have to close in
+			hit = { r = 0.3, g = 1, b = 0.3 },
+			approach = { r = 1, g = 0.82, b = 0 },
 		},
 	},
-	aspect = { enabled = true, travel = true, missing = true, preferred = "hawk", text = false, trueshot = true },
+	aspect = { enabled = true, travel = true, missing = true, preferred = "hawk", melee = "beast", text = false, trueshot = true },
 	traps = { enabled = true, freeze = true },
 	lowAmmo = { enabled = true, threshold = 1000, merchant = true },
 	petFood = { enabled = true, bar = true, hideInCombat = true, low = 10, merchant = true },
@@ -197,4 +202,71 @@ frame:SetScript("OnEvent", function(self, event, name)
 	HunterGodDB = Fill(HunterGodDB or {}, defaults)
 	ns.db = HunterGodDB
 	self:UnregisterEvent("ADDON_LOADED")
+end)
+
+-- Survival in Forever fights in melee. There's no spec to read (one talent tree per class), so
+-- its melee talents give it away: Strider Kick, Predator's Edge and Expose Prey (IDs from
+-- wow.gg's Forever guide). /huntergod style says what it found
+ns.MELEE_TALENTS = { 1317257, 1310627, 1310532 }
+local meleeTalent -- the first of them you know, false for none, nil before looking
+
+local function FindMeleeTalent()
+	for _, id in ipairs(ns.MELEE_TALENTS) do
+		local known
+		if IsPlayerSpell then known = IsPlayerSpell(id) elseif IsSpellKnown then known = IsSpellKnown(id) end
+		if known and not ns.IsSecret(known) then return id end
+	end
+	return false
+end
+
+-- Melee (Survival) or ranged: what you chose in the options, or what your talents say
+function ns.IsMelee()
+	local style = ns.db and ns.db.playstyle
+	if style == "melee" or style == "ranged" then return style == "melee" end
+	if meleeTalent == nil then meleeTalent = FindMeleeTalent() end
+	return meleeTalent ~= false
+end
+
+local function SpellLabel(id)
+	local name = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(id)
+	if not name and GetSpellInfo then name = GetSpellInfo(id) end
+	return name or ("#" .. id)
+end
+
+local function StyleReport()
+	local why
+	if ns.db.playstyle == "melee" or ns.db.playstyle == "ranged" then
+		why = L.STYLE_CHOSEN
+	else
+		meleeTalent = FindMeleeTalent()
+		if meleeTalent then
+			why = format(L.STYLE_FOUND, SpellLabel(meleeTalent))
+		else
+			local names = {}
+			for _, id in ipairs(ns.MELEE_TALENTS) do names[#names + 1] = SpellLabel(id) end
+			why = format(L.STYLE_NONE, table.concat(names, ", "))
+		end
+	end
+	ns.Print(format(L.STYLE_REPORT, ns.IsMelee() and L.PLAYSTYLE.melee or L.PLAYSTYLE.ranged, why))
+end
+ns.commands.style = StyleReport
+ns.commands.estilo = StyleReport
+
+-- Changing talents changes the style: everything follows, and the chat says so
+local styleWatch = CreateFrame("Frame")
+local settled = false
+styleWatch:RegisterEvent("PLAYER_LOGIN")
+styleWatch:RegisterEvent("SPELLS_CHANGED")
+pcall(styleWatch.RegisterEvent, styleWatch, "TRAIT_CONFIG_UPDATED")
+styleWatch:SetScript("OnEvent", function(_, event)
+	if event == "PLAYER_LOGIN" then
+		-- The spells come in bits at login: nothing to say until they have
+		C_Timer.After(10, function() settled = true end)
+	end
+	if not ns.db or not ns.IsHunter() then return end
+	local was = ns.IsMelee()
+	meleeTalent = FindMeleeTalent()
+	if ns.IsMelee() == was then return end
+	if settled then ns.Print(was and L.STYLE_NOW_RANGED or L.STYLE_NOW_MELEE) end
+	ns.RefreshAll()
 end)

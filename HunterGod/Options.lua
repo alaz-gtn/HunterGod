@@ -258,9 +258,12 @@ local function PickColor(color, changed)
 	end
 end
 
--- The range display as it will look, one sample per state: click one to change its colour
-local SAMPLES = { { "melee", 0, 5, 3 }, { "dead", 5, 8, 7 }, { "ranged", 25, 30, 28 }, { "far", 30, 35, 33 },
-	{ "out", 41, nil, 43 } }
+-- The range display as it will look, one sample per state: click one to change its colour.
+-- In melee (Survival) the row has its own states: no max range, and getting closer instead of in range
+local SAMPLES = { melee = { 0, 5, 3 }, hit = { 0, 5, 3 }, dead = { 5, 8, 7 }, ranged = { 25, 30, 28 },
+	approach = { 25, 30, 28 }, far = { 30, 35, 33 }, out = { 41, nil, 43 } }
+local SAMPLE_ORDER = { "melee", "hit", "dead", "ranged", "approach", "far", "out" }
+local SAMPLE_ROWS = { ranged = { "melee", "dead", "ranged", "far", "out" }, melee = { "hit", "dead", "approach", "out" } }
 
 local function Preview(page, y, changed)
 	local range = ns.db.range
@@ -271,12 +274,9 @@ local function Preview(page, y, changed)
 	local hint = Text(card, "GameFontHighlightSmall", MUTED)
 	hint:SetPoint("BOTTOM", 0, 6)
 	hint:SetText(L.PREVIEW_HINT)
-	local cell = (PAGE_WIDTH - 20) / #SAMPLES
-	for i, s in ipairs(SAMPLES) do
-		local state = s[1]
+	for _, state in ipairs(SAMPLE_ORDER) do
+		local s = SAMPLES[state]
 		local sample = CreateFrame("Button", nil, card)
-		sample:SetSize(cell - 8, 70)
-		sample:SetPoint("TOPLEFT", (i - 1) * cell + 4, -4)
 		Highlight(sample, 0.06)
 		local glow = sample:CreateTexture(nil, "BACKGROUND")
 		local glowReady = glow:SetTexture(ns.GLOW) ~= false
@@ -290,6 +290,16 @@ local function Preview(page, y, changed)
 		caption:SetText(L.RANGE[state])
 		sample.number, sample.unit, sample.glow = number, unit, glow
 		sample.Refresh = function()
+			local row, place = SAMPLE_ROWS[ns.IsMelee() and "melee" or "ranged"], nil
+			for i, key in ipairs(row) do
+				if key == state then place = i end
+			end
+			sample:SetShown(place ~= nil)
+			if not place then return end
+			local cell = (PAGE_WIDTH - 20) / #row
+			sample:SetSize(cell - 8, 70)
+			sample:ClearAllPoints()
+			sample:SetPoint("TOPLEFT", (place - 1) * cell + 4, -4)
 			local c = range.colors[state]
 			local size = min(range.textSize, 22)
 			local font = ns.FONTS[range.font]
@@ -299,7 +309,7 @@ local function Preview(page, y, changed)
 				number:SetFont(font, size, "THICKOUTLINE")
 				unit:SetFont(font, max(floor(size * 0.5), 8), "OUTLINE")
 			end
-			number:SetText(ns.RangeNumber(s[2], s[3], s[4]))
+			number:SetText(ns.RangeNumber(s[1], s[2], s[3]))
 			unit:SetText(range.units == "meters" and L.METERS or L.YARDS)
 			number:SetTextColor(c.r, c.g, c.b)
 			unit:SetTextColor(c.r, c.g, c.b)
@@ -507,6 +517,7 @@ local function Build()
 	MapCheck(L.ARROWS_BOX, "arrows", icons.arrows)
 	MapCheck(L.BULLETS_BOX, "bullets", icons.bullets)
 	MapCheck(L.TRAINERS_BOX, "trainers", ns.HUNTER_ICON, ns.HUNTER_COORDS)
+	MapCheck(L.STABLES_BOX, "stableMasters", icons.stableMasters)
 	MapCheck(L.OPT_FOOD_VENDORS, "foodVendors", icons.foodVendors)
 	y = Section(page, y, L.SEC_WHICH)
 	MapCheck(L.OPT_OTHER_FACTION, "allFactions")
@@ -555,6 +566,10 @@ local function Build()
 	-- Combat: aspects, traps, melee range and aggro
 	local aspect = db.aspect
 	page, y = NewPage("aspects", L.TAB_COMBAT, SpellIcon(ns.ASPECTS.hawk, "Interface\\Icons\\Spell_Nature_RavenForm"))
+	y = Section(page, y, L.SEC_PLAYSTYLE)
+	y = Choice(page, y, L.OPT_PLAYSTYLE, {
+		{ "auto", L.PLAYSTYLE.auto }, { "ranged", L.PLAYSTYLE.ranged }, { "melee", L.PLAYSTYLE.melee },
+	}, function() return db.playstyle end, function(v) db.playstyle = v ns.RefreshAll() end)
 	y = Section(page, y, L.TAB_ASPECTS)
 	y = Check(page, y, L.OPT_ASPECT_ON, function() return aspect.enabled end, function(v) aspect.enabled = v ns.UpdateAspect() end)
 	y = Check(page, y, L.OPT_TRAVEL, function() return aspect.travel end, function(v) aspect.travel = v ns.UpdateAspect() end)
@@ -566,6 +581,13 @@ local function Build()
 	aspects[#aspects + 1] = { "any", L.ANY_ASPECT }
 	y = Choice(page, y, L.OPT_PREFERRED, aspects, function() return aspect.preferred end,
 		function(v) aspect.preferred = v ns.UpdateAspect() end)
+	local meleeAspects = {}
+	for _, key in ipairs({ "beast", "monkey", "hawk", "wild" }) do
+		meleeAspects[#meleeAspects + 1] = { key, ns.AspectName(key), icon = SpellIcon(ns.ASPECTS[key]) }
+	end
+	meleeAspects[#meleeAspects + 1] = { "any", L.ANY_ASPECT }
+	y = Choice(page, y, L.OPT_PREFERRED_MELEE, meleeAspects, function() return aspect.melee end,
+		function(v) aspect.melee = v ns.UpdateAspect() end)
 	y = Check(page, y, L.OPT_ASPECT_TEXT, function() return aspect.text end, function(v) aspect.text = v ns.UpdateAspect() end)
 	y = Check(page, y, format(L.OPT_TRUESHOT, SpellName(19506) or L.TRUESHOT), function() return aspect.trueshot end,
 		function(v) aspect.trueshot = v ns.UpdateTrueshot() end, SpellIcon(19506))

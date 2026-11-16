@@ -1,3 +1,9 @@
+# 1.2.0
+
+- Survival: HunterGod knows from your talents (Strider Kick, Predator's Edge or Expose Prey) that you fight in melee, or you choose it in Combat, How you fight. In melee the range is green up close and yellow "Get closer" further out, with no max range glow and no blinking warnings, and the aspect warning asks for your melee aspect (Beast, or Monkey until you learn it; your choice in the options). `/huntergod style` says which mode you're in and why.
+- Stable masters on the map: 46 of them on the zone map, the continent map and the minimap, with their own box in the map's corner and in the options (`/ammo stables`). Click one for a waypoint.
+- HEAL YOUR PET! never showed: Forever hides the pet's health from addons. The game itself now turns it into the warning and its number, so it shows again below your line.
+
 # 1.1.0
 
 - Trueshot Aura reminder: its icon with a countdown in its last 2 minutes, grey once it's gone until you cast it again. It keeps counting in combat, when the game hides your buffs. Switch in Combat, Aspects; move it like the other warnings.
