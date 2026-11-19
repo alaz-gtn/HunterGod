@@ -354,12 +354,14 @@ check(all(v.m and 0 <= v.x <= 100 and 0 <= v.y <= 100 and v.side in ("A", "H", "
           for v in data.values()), "every vendor has map, coordinates, side, ammo type and name")
 trainers = ns.trainers
 n_trainers = len(list(trainers.keys()))
-check(n_trainers > 20 and all(t.m and 0 <= t.x <= 100 and 0 <= t.y <= 100 and t.side in ("A", "H") and t.name
+check(n_trainers > 20 and all(t.m and 0 <= t.x <= 100 and 0 <= t.y <= 100 and t.side in ("A", "H", "B") and t.name
                               for t in trainers.values()), f"Data.lua: {n_trainers} hunter trainers with map, coordinates, side and name")
 stables = ns.stableMasters
 n_stables = len(list(stables.keys()))
 check(n_stables > 30 and all(t.m and 0 <= t.x <= 100 and 0 <= t.y <= 100 and t.side in ("A", "H", "B") and t.name
                              for t in stables.values()), f"Data.lua: {n_stables} stable masters with map, coordinates, side and name")
+aili = stables[43408]
+check(aili is not None and aili.m == 2482 and aili.side == "B", "Aili Greenwillow, in Forever's Mount Hyjal, is there")
 foods = ns.petFoods
 check(len(list(foods.keys())) > 150 and all(1 <= f.t <= 6 and f.l >= 0 for f in foods.values()),
       f"PetFood.lua: {len(list(foods.keys()))} foods with type and level")
@@ -382,7 +384,8 @@ check(some.icon.maskTexture is not None and some.border is None
       == ["Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE"],
       "vendor pins: round with a clamped mask (no stripes), with no black square behind")
 tsides = {trainers[i].side for i in trainer_ids()}
-check(len(trainer_ids()) > 5 and tsides == {"H"}, f"Horde: {len(trainer_ids())} hunter trainer pins, all Horde")
+check(len(trainer_ids()) > 5 and "H" in tsides and tsides <= {"H", "B"},
+      f"Horde: {len(trainer_ids())} hunter trainer pins, Horde or for both sides")
 tip = tooltip(3171, "trainer")  # Thotar, Durotar
 print("     trainer tooltip:", tip)
 check(tip[0] == "Thotar" and tip[1] == ("Instructor de cazadores" if es else "Hunter trainer"), "trainer tooltip shows name and role")
@@ -479,19 +482,19 @@ out = slash("cerca")
 check(S.waypoint is not None and S.waypoint.m == 1411, f"nearest at level 5: {out}")
 S.level = 30
 
-# Recording a new vendor: Fizzix Boomshot in Riverglades sells level 10 arrows and bullets
-S.npcGUID = "Creature-0-1-2-3-260566-0000ABCD"
-S.npcName = "Fizzix Boomshot"
+# Recording a vendor QuestieDB doesn't have: one in Riverglades sells level 10 arrows and bullets
+S.npcGUID = "Creature-0-1-2-3-999001-0000ABCD"
+S.npcName = "Pexi Quickshot"
 S.playerMap, S.px, S.py = 2548, 0.7855, 0.5355
 S.merchant = lua.table(159, 2512, 2515, 2516, 2519)
 printed.clear()
 G.Fire("MERCHANT_SHOW")
 G.RunTimers()
-learned = db.learned[260566]
+learned = db.learned[999001]
 check(learned is not None and learned.arrows and learned.bullets and learned.upTo == 25 and learned.m == 2548,
-      f"records Fizzix: {dict(learned) if learned else None}")
-check(len(printed) == 1 and "Fizzix" in printed[0], f"announces it once: {printed}")
-check(260566 in vendor_ids(), "Fizzix now on the map")
+      f"records Pexi: {dict(learned) if learned else None}")
+check(len(printed) == 1 and "Pexi" in printed[0], f"announces it once: {printed}")
+check(999001 in vendor_ids(), "Pexi now on the map")
 
 # A listed vendor that turns out not to sell ammo is removed
 S.npcGUID = f"Creature-0-1-2-3-{low}-0000ABCD"

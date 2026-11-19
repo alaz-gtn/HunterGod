@@ -1,3 +1,7 @@
+# 1.2.1
+
+- Forever's newer zones on the map, Mount Hyjal among them: 5 more stable masters (Aili Greenwillow in Mount Hyjal, for one), 6 hunter trainers, 15 ammo vendors and 55 pet food vendors. The data now comes from the QuestieDB addon itself, which is more up to date.
+
 # 1.2.0
 
 - Survival: HunterGod knows from your talents (Strider Kick, Predator's Edge or Expose Prey) that you fight in melee, or you choose it in Combat, How you fight. In melee the range is green up close and yellow "Get closer" further out, with no max range glow and no blinking warnings, and the aspect warning asks for your melee aspect (Beast, or Monkey until you learn it; your choice in the options). `/huntergod style` says which mode you're in and why.

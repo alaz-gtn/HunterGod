@@ -2,10 +2,18 @@
 los vendedores de flechas y balas, los instructores de cazadores, los maestros de establos y los vendedores
 de comida de mascota (qué es comida de mascota lo dice PetFood.lua, hecho antes con gen_petfood.py).
 
-Uso: python -I gen_questie.py <carpeta con los .lua de QuestieDB> <salida Data.lua> <PetFood.lua>
+Uso: python -I gen_questie.py <QuestieDB> <salida Data.lua> <PetFood.lua>
+
+<QuestieDB> puede ser:
+- el QuestieDB_Forever.toc del addon QuestieDB instalado (AddOns/QuestieDB). Es lo más nuevo: trae las zonas
+  que Forever va añadiendo, como Monte Hyjal. Los mapas los lee de support/Forever/Zones, a su lado.
+- una carpeta con los .lua de GitHub de antes (foreverItemDB.lua, foreverNpcDB.lua, areaIdToUiMapId.lua).
 """
+import base64
 import re
+import struct
 import sys
+import zlib
 from pathlib import Path
 
 from lupa.luajit21 import LuaRuntime
@@ -17,8 +25,8 @@ pet_food = {int(i): (int(t), int(l)) for i, t, l in
 lua = LuaRuntime(unpack_returned_tuples=True)
 
 
-def load_block(filename, var):
-    text = (src / filename).read_text(encoding="utf-8")
+def load_block(path, var):
+    text = Path(path).read_text(encoding="utf-8")
     m = re.search(re.escape(var) + r"\s*=\s*\[\[(.*?)\]\]", text, re.S)
     if not m:
         sys.exit(f"no encuentro {var} en {filename}")
@@ -35,10 +43,95 @@ def load_block(filename, var):
     return merged
 
 
-items = load_block("foreverItemDB.lua", "QuestieDB.itemData")
-npcs = load_block("foreverNpcDB.lua", "QuestieDB.npcData")
-area_override = load_block("areaIdToUiMapId.lua", "ZoneDB.private.areaIdToUiMapIdOverride")
-area_base = load_block("areaIdToUiMapId.lua", "ZoneDB.private.areaIdToUiMapId")
+class Table(dict):
+    """Como una tabla de Lua: lo que no está es None"""
+
+    def __missing__(self, key):
+        return None
+
+
+def cbor(data, i=0):
+    """Un valor CBOR desde data[i]: (valor, siguiente posición). Las listas salen como tablas desde 1"""
+    head = data[i]
+    i += 1
+    major, info = head >> 5, head & 31
+    if major == 7:
+        simple = {20: False, 21: True, 22: None, 23: None}
+        if info in simple:
+            return simple[info], i
+        size, fmt = {25: (2, ">e"), 26: (4, ">f"), 27: (8, ">d")}[info]
+        return struct.unpack(fmt, data[i:i + size])[0], i + size
+    if info < 24:
+        n = info
+    elif info <= 27:
+        size = 1 << (info - 24)
+        n = int.from_bytes(data[i:i + size], "big")
+        i += size
+    else:
+        raise ValueError(f"CBOR de longitud indefinida en {i - 1}")
+    if major == 0:
+        return n, i
+    if major == 1:
+        return -1 - n, i
+    if major in (2, 3):  # el juego guarda las cadenas de Lua como bytes
+        return data[i:i + n].decode("utf-8"), i + n
+    if major == 6:  # etiqueta: vale lo que lleva dentro
+        return cbor(data, i)
+    out = Table()
+    for k in range(1, n + 1):
+        if major == 4:
+            out[k], i = cbor(data, i)
+        else:
+            key, i = cbor(data, i)
+            out[key], i = cbor(data, i)
+    return out, i
+
+
+def load_baked(toc, entity, field_count, table_fields):
+    """Las entidades del QuestieDB "baked": cada una va en los metadatos del TOC, en CBOR y base64.
+    ## X-Npc-<id>-S lleva los campos sueltos y su máscara p de qué tablas tiene; ## X-Npc-<id>-<campo>, cada tabla.
+    Un valor largo va troceado: "~N~" y las partes en <clave>-1 .. <clave>-N"""
+    stored = {}
+    for line in toc.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## X-"):
+            key, _, value = line[3:].partition(": ")
+            stored[key] = value.strip()
+
+    def get(key):
+        value = stored.get(key)
+        chunks = value and re.fullmatch(r"~(\d+)~", value)
+        if chunks:
+            value = "".join(stored[f"{key}-{n}"] for n in range(1, int(chunks.group(1)) + 1))
+        return value
+
+    ids = cbor(zlib.decompress(base64.b64decode(get(f"X-{entity}-IDS"))))[0]
+    out = Table()
+    for entity_id in ids.values():
+        raw = get(f"X-{entity}-{entity_id}-S")
+        row = cbor(base64.b64decode(raw))[0] if raw else Table()
+        mask = row["p"] or 0
+        fields = Table()
+        for field in range(1, field_count + 1):
+            if field in table_fields:
+                if mask >> (field - 1) & 1:
+                    fields[field] = cbor(base64.b64decode(get(f"X-{entity}-{entity_id}-{field}")))[0]
+            else:
+                fields[field] = row[field]
+        out[int(entity_id)] = fields
+    return out
+
+
+if src.suffix.lower() == ".toc":
+    # Los índices de las tablas, de src/meta/itemMeta.lua y npcMeta.lua
+    items = load_baked(src, "Item", 16, {2, 3, 4, 6, 14, 15})
+    npcs = load_baked(src, "Npc", 15, {7, 8, 10, 11})
+    zones = src.parent / "support" / "Forever" / "Zones" / "areaIdToUiMapId.lua"
+else:
+    items = load_block(src / "foreverItemDB.lua", "QuestieDB.itemData")
+    npcs = load_block(src / "foreverNpcDB.lua", "QuestieDB.npcData")
+    zones = src / "areaIdToUiMapId.lua"
+area_override = load_block(zones, "ZoneDB.private.areaIdToUiMapIdOverride")
+area_base = load_block(zones, "ZoneDB.private.areaIdToUiMapId")
 
 # Índices de las tablas de Questie (itemKeys / npcKeys)
 I_NAME, I_REQLEVEL, I_CLASS, I_SUBCLASS, I_VENDORS = 1, 10, 12, 13, 14

@@ -39,7 +39,7 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 
 ## Vendors, trainers and stable masters on the map
 
-- **117 arrow and bullet vendors**, **29 hunter trainers** and **46 stable masters** on the zone map, the continent map and the minimap.
+- **132 arrow and bullet vendors**, **35 hunter trainers** and **51 stable masters** on the zone map, the continent map and the minimap.
 - **Pet food vendors**: only the ones that sell food the pet you have out eats, at a level it still likes.
 - Checkboxes in the corner of the world map to show or hide arrows, bullets, trainers, stable masters and pet food.
 - Vendors that only sell ammo below your level are greyed out. Click a pin to set a waypoint (TomTom too).
