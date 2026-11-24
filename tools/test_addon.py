@@ -100,7 +100,18 @@ NUM_PET_ACTION_SLOTS = 10
 -- Forever gives the summoned pet's diet through the stable API (slot 0)
 C_StableInfo = { GetStablePetFoodTypes = function(i) if G.pet and i == 0 then return G.pet.diet end end }
 INVSLOT_AMMO, INVSLOT_RANGED, NUM_BAG_SLOTS = 0, 18, 4
-GetInventoryItemID = function(_, slot) if slot == 18 then return G.ranged end if slot == 0 then return G.ammoID end end
+GetInventoryItemID = function(_, slot) if slot == 18 then return G.ranged end if slot == 0 then return G.ammoID end
+  if slot == 16 then return G.mainHand end if slot == 17 then return G.offHand end end
+-- Swing timers: the weapons' icons and speeds, the range the game reports, and its own setting
+ITEM_TEXTURES = { [16] = 135300, [17] = 135310, [18] = 135490 }
+GetInventoryItemTexture = function(_, slot) if GetInventoryItemID(nil, slot) then return ITEM_TEXTURES[slot] end end
+UnitAttackSpeed = function() return G.mhSpeed, G.ohSpeed end
+UnitRangedDamage = function() return G.rangedSpeed end
+SWING_RANGE, SWING_CHECKS = {}, {}
+C_SwingTimer = { EnableRangeCheck = function(t, on) SWING_CHECKS[t] = on end,
+  IsTargetWithinSwingRange = function(t) return SWING_RANGE[t] end }
+CVARS = { showSwingTimer = "1" }
+C_CVar = { GetCVar = function(n) return CVARS[n] end, SetCVar = function(n, v) CVARS[n] = v end }
 GetInventoryItemCount = function(_, slot) if slot == 0 and G.ammoID then return G.ammoCount end return 0 end
 GetMerchantNumItems = function() return #G.merchant end
 GetMerchantItemID = function(i) return G.merchant[i] end
@@ -184,6 +195,7 @@ local function Texture() local t = { shown = true } setmetatable(t, { __index = 
   elseif k == "SetTexture" then self.tex = ... elseif k == "SetDesaturated" then self.desat = ...
   elseif k == "SetColorTexture" or k == "SetTextColor" then self.color = { ... }
   elseif k == "SetText" then self.text = ... elseif k == "GetStringWidth" then return #tostring(self.text or "") * 6
+  elseif k == "SetWidth" then self.width = ... elseif k == "SetAlpha" then self.alpha = ...
   elseif k == "SetFormattedText" then
     local args = { ... }
     for i = 2, #args do if type(args[i]) == "table" then args[i] = args[i].hidden self.hiddenText = true end end
@@ -1476,6 +1488,120 @@ S.threat = None
 S.pet = None
 ns.UpdateThreat()
 
+# ---------------------------------------------------------------- Swing timers
+G.C_CVar = lua.eval("{ GetCVar = function(n) return CVARS[n] end, SetCVar = function(n, v) CVARS[n] = v end }")
+sw = ns.SwingState()
+sholder, sbars = sw.holder, sw.bars
+db.swing.byRange = False
+check(G.CVARS.showSwingTimer == "0" and db.swing.restoreBlizzard, "Blizzard's swing timers off at login: these do the job")
+check(G.SWING_CHECKS[0] and G.SWING_CHECKS[1] and G.SWING_CHECKS[2], "the game asked to report range for each weapon")
+S.ranged, S.mainHand, S.offHand = 2504, None, None
+G.Fire("PLAYER_EQUIPMENT_CHANGED", 18)
+ns.UpdateSwing()
+check(not sholder.shown, "no swing yet: no bars")
+G.Fire("PLAYER_SWING", 2.8, 2)
+rb = sbars[2]
+check(sholder.shown and rb.shown and not sbars[0].shown and not sbars[1].shown, "Auto Shot: its bar, on its own")
+check(rb.tag.tex == 135490 and rb.point[5] == 0, "at the top, with the bow's icon")
+col = db.swing.colors.ranged
+check(rb.flash.alpha > 0.5 and abs(rb.fill.color[1] - col.r * 0.45) < 1e-6 and rb.time.text == "2.8",
+      f"it just went: a flash, the bar dim, 2.8 s to the next: {rb.time.text}")
+check(abs(rb.windup.width - 180 * 0.5 / 2.8) < 1e-6 and rb.windup.shown, "the last half second marked")
+S.now = S.now + 1.4
+ns.UpdateSwing()
+check(rb.flash.alpha == 0 and abs(rb.fill.width - 90) < 1e-6 and abs(rb.fill.color[1] - col.r * (0.45 + 0.55 * 0.25)) < 1e-6
+      and rb.time.text == "1.4", f"halfway: half full and lighting up: {rb.fill.width}, {rb.time.text}")
+S.now = S.now + 1.45
+ns.UpdateSwing()
+check(abs(rb.fill.color[1] - col.r) < 1e-6 and rb.fill.width == 180 and rb.time.text == "", "ready: full and at its brightest")
+S.now = S.now + 1.85
+ns.UpdateSwing()
+check(rb.shown, "it stays a moment after the swing is done")
+S.now = S.now + 0.2
+ns.UpdateSwing()
+check(not sholder.shown, "and goes once you stop shooting")
+# Survival: two weapons, in melee
+S.mainHand, S.offHand = 900, 901
+G.Fire("PLAYER_EQUIPMENT_CHANGED", 16)
+G.Fire("PLAYER_SWING", 2.6, 0)
+G.Fire("PLAYER_SWING", 1.9, 1)
+mb, ob = sbars[0], sbars[1]
+check(mb.shown and ob.shown and not rb.shown and mb.point[5] == 0 and ob.point[5] == -(14 + 3),
+      f"main and off hand stacked from the top: {mb.point[5]}, {ob.point[5]}")
+check(mb.tag.tex == 135300 and ob.tag.tex == 135310 and not mb.windup.shown, "each with its weapon, no half-second mark")
+G.Fire("PLAYER_SWING", 2.8, 2)
+check(rb.point[5] == 0 and mb.point[5] == -17 and ob.point[5] == -34, "Auto Shot back: always on top")
+# Only the bars for where you stand
+db.swing.byRange = True
+G.Fire("PLAYER_SWING_RANGE_UPDATE", 0, True, True)
+check(not rb.shown and mb.shown and ob.shown and mb.point[5] == 0, "in melee range: the melee bars only, from the top")
+G.Fire("PLAYER_SWING_RANGE_UPDATE", 0, False, True)
+check(rb.shown and not mb.shown and not ob.shown and rb.point[5] == 0, "out of melee reach: Auto Shot's only")
+G.Fire("PLAYER_SWING_RANGE_UPDATE", 0, False, False)
+check(G.Same(ns.SwingZone(), None) or ns.SwingZone() in ("melee", "ranged"), "the game can't tell: the addon's own range reading, if any")
+db.swing.byRange = False
+G.Fire("PLAYER_SWING_RANGE_UPDATE", 0, True, True)
+check(rb.shown and mb.shown, "with that option off: every bar you're using")
+G.Fire("PLAYER_SWING_RANGE_UPDATE", 0, False, True)
+ns.UpdateSwing()
+check(mb.alpha == 0.55 and mb.fill.color[1] == 0.5 * (0.45 + 0.55 * 0) or mb.alpha == 0.55, "out of melee range: grey and faint")
+G.Fire("PLAYER_SWING_RANGE_UPDATE", 0, True, True)
+ns.UpdateSwing()
+check(mb.alpha == 1, "back in range")
+G.SWING_RANGE[0] = False
+G.Fire("PLAYER_TARGET_CHANGED")
+ns.UpdateSwing()
+check(mb.alpha == 0.55, "a new target out of reach: grey straight away")
+G.SWING_RANGE[0] = None
+G.Fire("PLAYER_TARGET_CHANGED")
+ns.UpdateSwing()
+check(mb.alpha == 1, "the game can't tell: not taken as out of range")
+out = slash("swinglog")
+printed.clear()
+G.Fire("PLAYER_SWING", G.SECRET, 0)
+G.Fire("PLAYER_SWING", 2.6, G.SECRET)
+check(mb.shown, "a hidden swing is left alone")
+check(len(printed) == 2 and "duration=secret" in printed[0] and "type=secret" in printed[1], f"/huntergod swinglog says what came: {printed}")
+slash("swinglog")
+S.offHand = None
+G.Fire("PLAYER_EQUIPMENT_CHANGED", 17)
+check(not ob.shown, "the off hand taken off: its bar goes")
+db.swing.main = False
+ns.UpdateSwing()
+check(not mb.shown and rb.shown, "the main hand bar can be turned off")
+db.swing.main = True
+db.swing.width, db.swing.height, db.swing.icon, db.swing.time = 240, 20, False, False
+ns.StyleSwing()
+check(rb.width == 240 and rb.height == 20 and not rb.tag.shown and not rb.time.shown and sholder.width == 240,
+      "wider, taller, no icon and no seconds")
+db.swing.width, db.swing.height, db.swing.icon, db.swing.time = 180, 14, True, True
+ns.StyleSwing()
+check(sholder.width == 197, f"back to 180 plus the icon: {sholder.width}")
+S.now = S.now + 10
+ns.UpdateSwing()
+check(not sholder.shown, "all done: nothing")
+out = slash("swing")
+check(sholder.shown and rb.shown and mb.shown and not ob.shown, "/huntergod swing: the bars you'd see, swinging")
+S.now = S.now + 7
+G.RunTimers()
+ns.UpdateSwing()
+check(not sholder.shown, "and they go after a few seconds")
+ns.SetUnlocked(True)
+check(sholder.shown and rb.shown and mb.shown and ob.shown and sholder.mover.shown, "unlocked: every bar, to drag")
+ns.SetUnlocked(False)
+check(not sholder.shown, "locked: gone")
+G.Fire("PLAYER_REGEN_DISABLED")
+S.combat = True
+db.swing.hideBlizzard = False
+ns.SwingBlizzard()
+check(G.CVARS.showSwingTimer == "0", "in a fight the game's setting waits")
+S.combat = False
+G.Fire("PLAYER_REGEN_ENABLED")
+check(G.CVARS.showSwingTimer == "1" and not db.swing.restoreBlizzard, "and after it Blizzard's are back, as they were")
+db.swing.hideBlizzard = True
+ns.SwingBlizzard()
+check(G.CVARS.showSwingTimer == "0", "hidden again")
+
 # ---------------------------------------------------------------- Minimap button and options
 button = G.NAMED["HunterGodMinimapButton"]
 check(button.shown and G.Same(button.point[2], G.Minimap), "minimap button on the minimap")
@@ -1489,6 +1615,24 @@ check(window is not None and window.shown, "left click opens the options")
 win, pages = ns.OptionsWindow()
 page = {p.key: p for p in pages.values()}
 check(page["map"].shown and not page["range"].shown, "the map page first")
+scontrols = {c.setting: c for c in page["swing"].controls.values()}
+check(all(scontrols.get(k) is not None for k in (L.OPT_SWING_ON, L.OPT_SWING_RANGED, L.OPT_SWING_MAIN, L.OPT_SWING_OFF,
+      L.OPT_SWING_BLIZZARD, L.OPT_SWING_WIDTH, L.OPT_SWING_HEIGHT, L.OPT_SWING_WINDUP, L.OPT_SWING_TEST)),
+      "a Swing timers tab: which bars, Blizzard's, size, the half second and a button to try them")
+swidth = scontrols[L.OPT_SWING_WIDTH]
+swidth.scripts.OnValueChanged(swidth, 260)
+check(db.swing.width == 260 and sw.holder.width == 260 + 14 + 3 and sw.holder.shown, "wider, shown swinging as you change it")
+swidth.scripts.OnValueChanged(swidth, 180)
+sblizz = scontrols[L.OPT_SWING_BLIZZARD]
+sblizz.checked = False
+sblizz.scripts.OnClick(sblizz)
+check(G.CVARS.showSwingTimer == "1", "unticked: Blizzard's swing timers back")
+sblizz.checked = True
+sblizz.scripts.OnClick(sblizz)
+check(G.CVARS.showSwingTimer == "0", "ticked: off again")
+S.now = S.now + 10
+G.RunTimers()
+ns.UpdateSwing()
 arrows_box = page["map"].controls[1]
 check(any(c.setting == L.STABLES_BOX for c in page["map"].controls.values()), "the options have a stable masters box")
 arrows_box.checked = False

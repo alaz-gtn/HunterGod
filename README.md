@@ -4,7 +4,7 @@ Addon de mejoras para cazadores en WoW Forever: distancia al objetivo, avisos de
 
 ## Carpetas
 
-- `HunterGod/`: el addon tal como se instala en `_forever_\Interface\AddOns`. Un archivo por función: `Init.lua` (ajustes, comandos, mover avisos), `Map.lua`, `Range.lua`, `Aspects.lua`, `Ammo.lua`, `Pet.lua`, `MinimapButton.lua` y `Options.lua`.
+- `HunterGod/`: el addon tal como se instala en `_forever_\Interface\AddOns`. Un archivo por función: `Init.lua` (ajustes, comandos, mover avisos), `Map.lua`, `Range.lua`, `Aspects.lua`, `Ammo.lua`, `Pet.lua`, `Swing.lua` (las barras de golpe, con el evento PLAYER_SWING de Forever), `MinimapButton.lua` y `Options.lua`.
 - `curseforge/`: logo, descripción y registro de cambios para la página del proyecto.
 - `release/`: los zips que se suben a CurseForge.
 - `tools/`: scripts para regenerar los datos, probar el addon, hacer el logo y empaquetar.

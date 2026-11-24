@@ -256,6 +256,49 @@ local function PickColor(color, changed)
 	end
 end
 
+-- A row with a square of colour on the right: click it to pick another
+local function Swatch(page, y, text, color, changed)
+	local row
+	row, y = Row(page, y, "Button", text, PAGE_WIDTH - 66)
+	Highlight(row)
+	local edge = Rect(row, "ARTWORK", 0, 0, 0, 1)
+	edge:SetSize(36, 20)
+	edge:SetPoint("RIGHT", -10, 0)
+	local square = Rect(row, "OVERLAY", color.r, color.g, color.b, 1)
+	square:SetSize(34, 18)
+	square:SetPoint("CENTER", edge)
+	row.Refresh = function() square:SetColorTexture(color.r, color.g, color.b, 1) end
+	row:SetScript("OnClick", function()
+		Click()
+		PickColor(color, function()
+			changed()
+			row.Refresh()
+		end)
+	end)
+	row.setting = text
+	table.insert(page.controls, row)
+	return y
+end
+
+-- A row that does something when you click it, its word on the right
+local function Action(page, y, text, word, run)
+	local row
+	row, y = Row(page, y, "Button", text, PAGE_WIDTH - 130)
+	Highlight(row)
+	local label = Text(row, "GameFontHighlight", ACCENT)
+	label:SetPoint("RIGHT", -10, 0)
+	label:SetJustifyH("RIGHT")
+	label:SetText(word)
+	row:SetScript("OnClick", function()
+		Click()
+		run()
+	end)
+	row.Refresh = function() end
+	row.setting = text
+	table.insert(page.controls, row)
+	return y
+end
+
 -- The range display as it will look, one sample per state: click one to change its colour.
 -- In melee (Survival) the row has its own states: no max range, and getting closer instead of in range
 local SAMPLES = { melee = { 0, 5, 3 }, hit = { 0, 5, 3 }, dead = { 5, 8, 7 }, ranged = { 25, 30, 28 },
@@ -599,6 +642,42 @@ local function Build()
 	y = Check(page, y, L.OPT_THREAT, function() return range.threat end, function(v) range.threat = v ns.UpdateThreat() end)
 	y = Slider(page, y, L.OPT_THREAT_PCT, 50, 100, 5, function() return range.threatPct end, function(v) range.threatPct = v ns.UpdateThreat() end)
 	Done(page, y)
+
+	-- Swing timers
+	local swing = db.swing
+	local function SwingChanged()
+		ns.StyleSwing()
+		ns.TestSwing()
+	end
+	page, y = NewPage("swing", L.TAB_SWING, "Interface\\Icons\\INV_Misc_PocketWatch_01")
+	y = Section(page, y, L.SEC_SWING)
+	y = Check(page, y, L.OPT_SWING_ON, function() return swing.enabled end,
+		function(v) swing.enabled = v ns.SwingBlizzard() ns.UpdateSwing() end)
+	y = Check(page, y, L.OPT_SWING_RANGED, function() return swing.ranged end, function(v) swing.ranged = v SwingChanged() end,
+		SpellIcon(75, "Interface\\Icons\\INV_Weapon_Bow_02"))
+	y = Check(page, y, L.OPT_SWING_MAIN, function() return swing.main end, function(v) swing.main = v SwingChanged() end,
+		"Interface\\Icons\\INV_Sword_04")
+	y = Check(page, y, L.OPT_SWING_OFF, function() return swing.off end, function(v) swing.off = v SwingChanged() end,
+		"Interface\\Icons\\INV_Weapon_ShortBlade_05")
+	y = Check(page, y, L.OPT_SWING_BY_RANGE, function() return swing.byRange end,
+		function(v) swing.byRange = v ns.UpdateSwing() end)
+	y = Check(page, y, L.OPT_SWING_BLIZZARD, function() return swing.hideBlizzard end,
+		function(v) swing.hideBlizzard = v ns.SwingBlizzard() end)
+	y = Section(page, y, L.SEC_LOOK)
+	y = Slider(page, y, L.OPT_SWING_WIDTH, 80, 400, 5, function() return swing.width end, function(v) swing.width = v SwingChanged() end)
+	y = Slider(page, y, L.OPT_SWING_HEIGHT, 6, 30, 1, function() return swing.height end, function(v) swing.height = v SwingChanged() end)
+	y = Check(page, y, L.OPT_SWING_TIME, function() return swing.time end, function(v) swing.time = v SwingChanged() end)
+	y = Check(page, y, L.OPT_SWING_ICON, function() return swing.icon end, function(v) swing.icon = v SwingChanged() end)
+	y = Check(page, y, L.OPT_SWING_WINDUP, function() return swing.windup end, function(v) swing.windup = v SwingChanged() end)
+	y = Swatch(page, y, format(L.OPT_SWING_COLOR, L.OPT_SWING_RANGED), swing.colors.ranged, SwingChanged)
+	y = Swatch(page, y, format(L.OPT_SWING_COLOR, L.OPT_SWING_MAIN), swing.colors.main, SwingChanged)
+	y = Swatch(page, y, format(L.OPT_SWING_COLOR, L.OPT_SWING_OFF), swing.colors.off, SwingChanged)
+	y = Action(page, y, L.OPT_SWING_TEST, L.TRY, ns.TestSwing)
+	local swingHint = Text(page, "GameFontHighlightSmall", MUTED)
+	swingHint:SetPoint("TOPLEFT", 10, y - 6)
+	swingHint:SetWidth(PAGE_WIDTH - 20)
+	swingHint:SetText(L.SWING_HINT)
+	Done(page, y - 70)
 
 	-- Ammo
 	local ammo = db.lowAmmo

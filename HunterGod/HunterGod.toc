@@ -1,10 +1,10 @@
 ## Interface: 16001
 ## Title: HunterGod
-## Notes: Quality of life for hunters: range to your target, aspect, ammo and pet food warnings, and ammo vendors, hunter trainers and stable masters on the map. /huntergod
-## Notes-esES: Mejoras para cazadores: distancia al objetivo, avisos de aspecto, munición y comida de la mascota, y vendedores de munición, instructores y establos en el mapa. /huntergod
-## Notes-esMX: Mejoras para cazadores: distancia al objetivo, avisos de aspecto, munición y comida de la mascota, y vendedores de munición, instructores y establos en el mapa. /huntergod
+## Notes: Quality of life for hunters: range to your target, swing timers, aspect, ammo and pet food warnings, and ammo vendors, hunter trainers and stable masters on the map. /huntergod
+## Notes-esES: Mejoras para cazadores: distancia al objetivo, barras de golpe, avisos de aspecto, munición y comida de la mascota, y vendedores de munición, instructores y establos en el mapa. /huntergod
+## Notes-esMX: Mejoras para cazadores: distancia al objetivo, barras de golpe, avisos de aspecto, munición y comida de la mascota, y vendedores de munición, instructores y establos en el mapa. /huntergod
 ## Author: wowforeverplus
-## Version: 1.2.2
+## Version: 1.3.0
 ## Category: Class
 ## SavedVariables: HunterGodDB
 ## IconTexture: Interface\AddOns\HunterGod\media\icon
@@ -25,5 +25,6 @@ Range.lua
 Aspects.lua
 Ammo.lua
 Pet.lua
+Swing.lua
 MinimapButton.lua
 Options.lua

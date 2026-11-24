@@ -1,6 +1,6 @@
 # HunterGod
 
-Quality of life for hunters in **WoW Forever**. HunterGod keeps an eye on the things a hunter forgets: how far the target is, which aspect you're in, how much ammo and pet food you have left, and where to buy more.
+Quality of life for hunters in **WoW Forever**. HunterGod keeps an eye on the things a hunter forgets: how far the target is, when your next shot or swing comes, which aspect you're in, how much ammo and pet food you have left, and where to buy more.
 
 Everything is set up from the **minimap button** (or `/huntergod`) in one options window, with a live preview of the range number, and every display can be dragged wherever you want it.
 
@@ -13,6 +13,15 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 - **Survival:** with melee talents (or by choice in the options) the range turns around: green in melee, yellow "Get closer" further out, no blinking warnings, and the aspect warning asks for your melee aspect.
 - **AGGRO 92%** under the target's nameplate when you're about to pull it off your pet (from 90%, or wherever you set it), and **YOU HAVE AGGRO!** when you do. Only with your pet out or in a group.
 - Above the target's **nameplate**, or anywhere you put it. Pick the size and the colour of each state.
+
+## Swing timers
+
+- A bar for each weapon: **Auto Shot**, **main hand** and **off hand**, stacked, with your weapon's icon on its left and the seconds to the next swing.
+- Each bar **starts dim, lights up as the swing comes and flashes when it goes**. Forever tells the game every swing, so they work in combat too.
+- **Only the bars for where you stand**: the melee ones in melee range, Auto Shot's further away. A bar shows while you attack with that weapon, goes a moment after you stop, and turns grey when your target is out of its reach.
+- **Auto Shot's last half second** is marked: moving then holds the shot back.
+- They replace **Blizzard's swing timers**, which HunterGod turns off while its bars are on.
+- Width, height, colours, which bars, the seconds and the icon in the **Swing timers** tab.
 
 ## Aspects and traps
 
@@ -54,6 +63,7 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 | `/huntergod unlock`, `/huntergod lock` | Move the displays (or right-click the minimap button) |
 | `/huntergod meters`, `/huntergod yards` | The range in metres or yards |
 | `/huntergod style` | Ranged or melee (Survival), and why |
+| `/huntergod swing` | Shows the swing timer bars swinging |
 | `/ammo arrows`, `/ammo bullets`, `/ammo both`, `/ammo weapon` | Which ammo the map shows |
 | `/ammo nearest` | Waypoint to the nearest useful vendor |
 | `/ammo trainers`, `/ammo stables`, `/ammo food`, `/ammo faction`, `/ammo minimap`, `/ammo continent`, `/ammo class` | Toggle each map option |

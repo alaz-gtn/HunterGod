@@ -164,6 +164,24 @@ local L = {
 	OPT_THREAT_PCT = "Warn from (% of aggro)",
 	TAB_AMMO = "Ammo",
 	TAB_PET = "Pet",
+	TAB_SWING = "Swing timers",
+	SWING_NAME = "Swing timers",
+	SEC_SWING = "A bar for each weapon",
+	OPT_SWING_ON = "Swing timer bars",
+	OPT_SWING_RANGED = "Auto Shot",
+	OPT_SWING_MAIN = "Main hand",
+	OPT_SWING_OFF = "Off hand",
+	OPT_SWING_BLIZZARD = "Hide Blizzard's swing timers",
+	OPT_SWING_BY_RANGE = "Only the bars for where you are: the melee ones in melee range, Auto Shot further away",
+	OPT_SWING_WIDTH = "Width",
+	OPT_SWING_HEIGHT = "Height",
+	OPT_SWING_TIME = "Seconds to the next swing",
+	OPT_SWING_ICON = "The weapon's icon on the left",
+	OPT_SWING_WINDUP = "Mark Auto Shot's last half second (moving holds the shot back)",
+	OPT_SWING_COLOR = "Colour: %s",
+	OPT_SWING_TEST = "See them swing",
+	TRY = "Try it",
+	SWING_HINT = "Each bar starts dim, lights up as the swing comes and flashes when it goes. It shows while you attack with that weapon and goes a moment after you stop. Forever tells the game each swing, in combat too. Drag them with Move displays.",
 	OPT_FOOD_VENDORS = "Vendors with food for the pet you have out",
 	OPT_OTHER_FACTION = "Show the other faction's too",
 	OPT_MINIMAP_PINS = "Pins on the minimap",
@@ -228,6 +246,7 @@ local L = {
 		"  /huntergod range  - what each range check says about your target",
 		"  /huntergod dr  - log what the game says about diminishing returns",
 		"  /huntergod style  - ranged or melee, and why",
+		"  /huntergod swing  - try the swing timer bars",
 		"  /ammo arrows | bullets | both | weapon  - which ammo the map shows",
 		"  /ammo nearest  - waypoint to the nearest useful vendor",
 		"  /ammo trainers | stables | food | faction | minimap | continent | class | button  - toggle each option",
@@ -384,6 +403,24 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.OPT_THREAT_PCT = "Avisar desde (% del agro)"
 	L.TAB_AMMO = "Munición"
 	L.TAB_PET = "Mascota"
+	L.TAB_SWING = "Golpes"
+	L.SWING_NAME = "Barras de golpe"
+	L.SEC_SWING = "Una barra por arma"
+	L.OPT_SWING_ON = "Barras de golpe"
+	L.OPT_SWING_RANGED = "Disparo automático"
+	L.OPT_SWING_MAIN = "Mano derecha"
+	L.OPT_SWING_OFF = "Mano izquierda"
+	L.OPT_SWING_BLIZZARD = "Ocultar las barras de golpe de Blizzard"
+	L.OPT_SWING_BY_RANGE = "Solo las barras de donde estás: las de cuerpo a cuerpo a melee, la del Disparo automático más lejos"
+	L.OPT_SWING_WIDTH = "Ancho"
+	L.OPT_SWING_HEIGHT = "Alto"
+	L.OPT_SWING_TIME = "Segundos hasta el siguiente golpe"
+	L.OPT_SWING_ICON = "El icono del arma a la izquierda"
+	L.OPT_SWING_WINDUP = "Marcar el último medio segundo del Disparo automático (moverte retrasa el tiro)"
+	L.OPT_SWING_COLOR = "Color: %s"
+	L.OPT_SWING_TEST = "Verlas golpear"
+	L.TRY = "Probar"
+	L.SWING_HINT = "Cada barra empieza apagada, se enciende según llega el golpe y da un destello al salir. Sale mientras atacas con esa arma y se va un momento después de parar. Forever le dice al juego cada golpe, también en combate. Arrástralas con Mover avisos."
 	L.OPT_FOOD_VENDORS = "Vendedores con comida para la mascota que llevas"
 	L.OPT_OTHER_FACTION = "Mostrar también los de la otra facción"
 	L.OPT_MINIMAP_PINS = "Pines en el minimapa"
@@ -448,6 +485,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 		"  /huntergod rango  - qué dice cada comprobación de distancia de tu objetivo",
 		"  /huntergod dr  - apuntar lo que dice el juego de los rendimientos decrecientes",
 		"  /huntergod estilo  - a distancia o cuerpo a cuerpo, y por qué",
+		"  /huntergod golpes  - probar las barras de golpe",
 		"  /municion flechas | balas | ambas | arma  - qué munición marca el mapa",
 		"  /municion cerca  - ruta al vendedor útil más cercano",
 		"  /municion instructores | establos | comida | faccion | minimapa | continente | clase | boton  - activar o quitar cada opción",

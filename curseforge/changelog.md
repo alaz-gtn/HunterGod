@@ -1,3 +1,11 @@
+# 1.3.0
+
+- **Swing timers**: a bar for each weapon (Auto Shot, main hand and off hand), stacked, with your weapon's icon on its left and the seconds to the next swing. Each bar starts dim, lights up as the swing comes and flashes when it goes. Forever tells the game every swing, so they work in combat too.
+- Only the bars for where you stand: the melee ones in melee range, Auto Shot's further away. A bar shows while you attack with that weapon and goes a moment after you stop, and turns grey when your target is out of its reach.
+- Auto Shot's last half second is marked: moving then holds the shot back.
+- They replace Blizzard's swing timers, which HunterGod turns off while its bars are on (and back on if you untick that option).
+- Width, height, colours, which bars, the seconds and the icon in the new Swing timers tab; drag them with Move displays. `/huntergod swing` shows them swinging.
+
 # 1.2.2
 
 - Map pins no longer float in the middle of the screen over your character: a vendor's pin the world map had let go of could show up there (a bullet vendor in Dustwallow Marsh, for one). A pin now only shows on the open world map or on the minimap.

@@ -50,6 +50,20 @@ local defaults = {
 	aspect = { enabled = true, travel = true, missing = true, preferred = "hawk", melee = "beast", text = false, trueshot = true },
 	traps = { enabled = true, freeze = true },
 	lowAmmo = { enabled = true, threshold = 1000, merchant = true },
+	-- A bar for each weapon's swing: Auto Shot, main hand, off hand
+	swing = {
+		enabled = true, ranged = true, main = true, off = true,
+		hideBlizzard = true, -- the game's own swing timers off while these show
+		byRange = true, -- in melee range only the melee bars, further away only Auto Shot's
+		width = 180, height = 14,
+		time = true, icon = true,
+		windup = true, -- Auto Shot's last half second, when moving holds the shot back
+		colors = {
+			ranged = { r = 0.67, g = 0.83, b = 0.45 },
+			main = { r = 0.89, g = 0.76, b = 0.48 },
+			off = { r = 0.73, g = 0.56, b = 0.36 },
+		},
+	},
 	petFood = { enabled = true, bar = true, hideInCombat = true, low = 10, merchant = true },
 	growl = { enabled = true, groups = false, miss = true },
 	petStatus = { happy = true, health = true, healthPct = 40, wrath = true },
