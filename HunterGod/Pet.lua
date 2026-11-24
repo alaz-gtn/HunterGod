@@ -39,10 +39,7 @@ end
 -- A hunter's pet is out (and alive)
 -- The round font of the range display, over the game's in case it can't load
 local function FancyFont(fontString, size, flags)
-	local gameFont = GameFontNormal:GetFont()
-	for _, font in ipairs({ gameFont, ns.FONTS and ns.FONTS[ns.db.range.font] or gameFont }) do
-		fontString:SetFont(font, size, flags)
-	end
+	ns.UseFont(fontString, ns.FONTS and ns.FONTS[ns.db.range.font], size, flags)
 end
 
 local function HasPet()

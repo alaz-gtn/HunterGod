@@ -334,7 +334,8 @@ local function Show(state, low, high, value)
 	local c = db.colors[state]
 	frame.text:SetText(ns.RangeNumber(low, high, value))
 	frame.unit:SetText(db.units == "meters" and L.METERS or L.YARDS)
-	frame.state:SetText(db.showState and L.RANGE[state] or "")
+	local label = db.showState or (state == "dead" and db.deadLabel)
+	frame.state:SetText(label and L.RANGE[state] or "")
 	for _, part in ipairs({ frame.text, frame.unit, frame.state }) do
 		part:SetTextColor(c.r, c.g, c.b)
 	end
@@ -362,13 +363,12 @@ function ns.StyleRange()
 	-- installing), the text keeps that one instead of losing its font
 	local gameFont = GameFontNormal:GetFont()
 	local unitSize, stateSize = max(floor(db.textSize * 0.5), 8), max(floor(db.textSize * 0.45), 8)
-	for _, font in ipairs({ gameFont, FONTS[db.font] or gameFont }) do
-		-- A thick black outline keeps the number readable on any ground
-		frame.text:SetFont(font, db.textSize, "THICKOUTLINE")
-		frame.unit:SetFont(font, unitSize, "OUTLINE")
-		frame.state:SetFont(font, stateSize, "OUTLINE")
-		melee.text:SetFont(font, 34, "THICKOUTLINE")
-	end
+	-- A thick black outline keeps the number readable on any ground
+	local font = FONTS[db.font] or gameFont
+	ns.UseFont(frame.text, font, db.textSize, "THICKOUTLINE")
+	ns.UseFont(frame.unit, font, unitSize, "OUTLINE")
+	ns.UseFont(frame.state, font, stateSize, "OUTLINE")
+	ns.UseFont(melee.text, font, 34, "THICKOUTLINE")
 	melee:SetSize(max(melee.text:GetStringWidth() + 8, 60), 40)
 	-- Blinks between the opacity you choose and a fifth of it
 	local alpha = db.meleeAlpha / 100
@@ -521,9 +521,7 @@ threatFade:SetToAlpha(0.3)
 threatFade:SetDuration(0.35)
 
 function ns.StyleThreat()
-	for _, font in ipairs({ GameFontNormal:GetFont(), FONTS[db.font] or GameFontNormal:GetFont() }) do
-		threat.text:SetFont(font, 16, "THICKOUTLINE")
-	end
+	ns.UseFont(threat.text, FONTS[db.font], 16, "THICKOUTLINE")
 end
 
 -- Do you have the target's aggro, and your threat as the game's tooltip and target frame show
@@ -561,7 +559,7 @@ function ns.UpdateThreat()
 		and C_NamePlate.GetNamePlateForUnit("target")
 	-- With the range under the nameplate, the warning goes under the range (and its state)
 	local under = targetPlate and db.enabled and db.anchor == "plate" and db.plateSide == "bottom"
-		and -(2 + (db.showState and max(floor(db.textSize * 0.45), 8) + 1 or 0))
+		and -(2 + ((frame.state:GetText() or "") ~= "" and max(floor(db.textSize * 0.45), 8) + 1 or 0))
 	local anchor = under and ("under" .. under) or targetPlate or "free"
 	if threat.anchor ~= anchor then
 		threat.anchor = anchor

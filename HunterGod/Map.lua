@@ -227,6 +227,18 @@ local function Round(owner, texture)
 	texture:AddMaskTexture(mask)
 end
 
+-- When the world map lets go of a pin, HereBeDragons hands it to UIParent, hidden and with no
+-- place: if anything shows it again there, it floats in the middle of the screen, over your
+-- character (a bullet vendor in Dustwallow Marsh, seen in game). A pin only belongs on the
+-- open world map or on the minimap.
+local function Pin_OnShow(self)
+	local parent = self:GetParent()
+	if parent == (HBDPins.Minimap or Minimap) then return end
+	if parent == UIParent or not (WorldMapFrame and WorldMapFrame:IsVisible()) then
+		self:Hide()
+	end
+end
+
 local function CreatePin(id, size, kind)
 	local pin = CreateFrame("Button")
 	pin:SetSize(size, size)
@@ -248,6 +260,7 @@ local function CreatePin(id, size, kind)
 	pin:SetScript("OnEnter", Pin_OnEnter)
 	pin:SetScript("OnLeave", GameTooltip_Hide)
 	pin:SetScript("OnClick", Pin_OnClick)
+	pin:SetScript("OnShow", Pin_OnShow)
 	return pin
 end
 

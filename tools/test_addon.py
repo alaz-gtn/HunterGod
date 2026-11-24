@@ -189,6 +189,8 @@ local function Texture() local t = { shown = true } setmetatable(t, { __index = 
     for i = 2, #args do if type(args[i]) == "table" then args[i] = args[i].hidden self.hiddenText = true end end
     self.text = format(unpack(args))
   elseif k == "SetFont" then self.font = { ... }
+  elseif k == "SetFontObject" then local o = ... self.fontObject = o self.font = o and o.font self.color = nil
+  elseif k == "GetTextColor" then if rawget(self, "color") then return unpack(self.color) end
   elseif k == "GetText" then return self.text
   elseif k == "AddMaskTexture" then self.maskTexture = ...
   elseif k == "CreateAnimationGroup" then return CreateFrame("Frame") end
@@ -242,6 +244,15 @@ function CreateFrame(kind, name, parent, template)
   end
   FRAMES = FRAMES or {} table.insert(FRAMES, f)
   if name then NAMED[name] = f end
+  return f
+end
+-- Font objects: one per name, the last font set on it counts
+FONT_OBJECTS = {}
+function CreateFont(name)
+  local f = { name = name }
+  function f:SetFont(...) self.font = { ... } end
+  function f:GetFont() return unpack(self.font) end
+  FONT_OBJECTS[name] = f
   return f
 end
 UIParent = CreateFrame("Frame")
@@ -544,7 +555,12 @@ check(range_at(37) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6) and not rng.g
       "out of range is grey, not the edge")
 check(range_at(9) == f"8-10 {yd}", f"9 yd: Auto Shot reaches from 8: {rng.text.text}")
 check(range_at(3) == f"0-5 {yd}" and colour()[:2] == (1, 0.82), f"3 yd: melee, yellow: {rng.text.text}")
-check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2), f"6 yd: dead zone, red: {rng.text.text}")
+check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2) and rng.state.text == L.RANGE.dead,
+      f"6 yd: dead zone, red, and it says so under the number: {rng.text.text} / {rng.state.text}")
+check(range_at(3) == f"0-5 {yd}" and rng.state.text == "", f"only there: not in melee ({rng.state.text})")
+db.range.deadLabel = False
+check(range_at(6) == f"5-8 {yd}" and rng.state.text == "", "with that option off, just the number")
+db.range.deadLabel = True
 check(range_at(38) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6), f"38 yd: out of range, grey: {rng.text.text}")
 check(range_at(150) == f"100+ {yd}", f"150 yd: {rng.text.text}")
 db.range.units = "meters"
@@ -924,12 +940,52 @@ S.plate = None
 ns.UpdateFreeze()
 check(not holder.shown, "no nameplate: nothing")
 
+# ---------------------------------------------------------------- Pins never float off the maps
+world_pin = list(G.WORLD.keys())[0]
+mini_pin = list(G.MINI.keys())[0]
+map_pin = G.CreateFrame("Frame", None, G.WorldMapFrame)
+world_pin.parent = map_pin
+world_pin.shown = True
+world_pin.scripts.OnShow(world_pin)
+check(world_pin.shown, "a pin on the open world map shows")
+G.WorldMapFrame.shown = False
+world_pin.scripts.OnShow(world_pin)
+check(not world_pin.shown, "with the world map closed it doesn't")
+G.WorldMapFrame.shown = True
+world_pin.parent = G.UIParent  # what HereBeDragons does when the map lets go of it
+world_pin.shown = True
+world_pin.scripts.OnShow(world_pin)
+check(not world_pin.shown, "a pin let go of by the map, shown again: hidden, not floating over your character")
+mini_pin.parent = G.Minimap
+mini_pin.shown = True
+G.WorldMapFrame.shown = False
+mini_pin.scripts.OnShow(mini_pin)
+check(mini_pin.shown, "a minimap pin shows with the world map closed")
+G.WorldMapFrame.shown = True
+
 # ---------------------------------------------------------------- Ammo
 ammo = G.NAMED["HunterGodAmmo"]
-S.ranged, S.ammoID, S.ammoCount = 2504, 2515, 734
-printed.clear()
+S.ranged, S.ammoID, S.ammoCount = 2504, 2515, 3000
 G.Fire("BAG_UPDATE_DELAYED")
-check(ammo.shown and ammo.text.text == 734, f"734 arrows: low ammo shown ({ammo.text.text})")
+check(not ammo.shown, "3000 arrows: nothing")
+# After a loading screen the bags can read short for a moment
+S.ammoCount = 12
+printed.clear()
+G.Fire("UNIT_INVENTORY_CHANGED", "player")
+check(not ammo.shown and not printed, "a low count is not believed at once")
+S.ammoCount = 3000
+S.now = S.now + 2
+G.RunTimers()
+check(not ammo.shown and not printed, "the 3000 arrows read again a moment later: no warning, nothing in chat")
+S.ammoCount = 734
+G.Fire("BAG_UPDATE_DELAYED")
+check(not ammo.shown, "really low: not yet")
+S.now = S.now + 1
+G.Fire("BAG_UPDATE_DELAYED")
+check(not ammo.shown, "still waiting")
+S.now = S.now + 1
+G.RunTimers()
+check(ammo.shown and ammo.text.text == 734, f"734 arrows two seconds later: low ammo shown ({ammo.text.text})")
 check(len(printed) == 1 and "734" in printed[0], f"says it once in chat: {printed}")
 G.Fire("BAG_UPDATE_DELAYED")
 check(len(printed) == 1, "and not again")
@@ -943,7 +999,14 @@ G.Fire("BAG_UPDATE_DELAYED")
 check(not ammo.shown, "1500 arrows: nothing")
 S.ammoID = None
 G.Fire("PLAYER_EQUIPMENT_CHANGED", 0)
+S.now = S.now + 2
+G.RunTimers()
 check(ammo.shown and ammo.text.text == L.NO_AMMO, "bow without ammo: 'no ammo'")
+db.lowAmmo.enabled = False
+ns.UpdateAmmo()
+check(not ammo.shown, "the warning turned off: nothing")
+db.lowAmmo.enabled = True
+ns.UpdateAmmo()
 S.ranged = None
 G.Fire("PLAYER_EQUIPMENT_CHANGED", 18)
 check(not ammo.shown, "no ranged weapon: nothing")
@@ -1364,6 +1427,7 @@ ns.UpdateThreat()
 check(G.Same(thr.point[2], rng) and thr.point[1] == "TOP" and thr.point[5] == -2,
       "with the range under the nameplate, the warning goes under the range")
 db.range.showState = True
+ns.UpdateRange()
 ns.UpdateThreat()
 check(thr.point[5] < -2, "and under its state too when it's written")
 db.range.showState = False

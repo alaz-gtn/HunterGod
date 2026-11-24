@@ -14,6 +14,10 @@ local GetItemIconByID = C_Item and C_Item.GetItemIconByID or GetItemIcon
 
 local db, frame
 local warned = false
+-- Right after a loading screen the game can count your ammo short for a moment: a low count
+-- is only believed if it still reads low this many seconds later
+local SETTLE = 2
+local lowSince
 
 -- The kind of ammo the ranged weapon needs (arrow or bullet subclass), or nil
 local function WeaponAmmo()
@@ -37,6 +41,7 @@ end
 function ns.UpdateAmmo()
 	if not db.enabled or not ns.IsHunter() then
 		frame:Hide()
+		lowSince = nil
 		return
 	end
 	local needs = WeaponAmmo()
@@ -47,7 +52,17 @@ function ns.UpdateAmmo()
 	if not needs or count >= db.threshold then
 		frame:Hide()
 		warned = false
+		lowSince = nil
 		return
+	end
+	if not ns.unlocked and not frame:IsShown() then
+		local now = GetTime()
+		if not lowSince then
+			lowSince = now
+			C_Timer.After(SETTLE, ns.UpdateAmmo)
+			return
+		end
+		if now - lowSince < SETTLE - 0.05 then return end
 	end
 	frame.icon:SetTexture(id and GetItemIconByID(id) or "Interface\\Icons\\INV_Ammo_Arrow_02")
 	frame.icon:SetDesaturated(count == 0)

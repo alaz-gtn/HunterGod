@@ -47,8 +47,7 @@ end
 
 -- The addon's round font, over the game's in case it can't load
 local function Fancy(fs, size, flags)
-	fs:SetFont(GameFontNormal:GetFont(), size, flags or "")
-	fs:SetFont(ns.FONTS.fredoka, size, flags or "")
+	ns.UseFont(fs, ns.FONTS.fredoka, size, flags)
 end
 
 local function Text(parent, template, color)
@@ -220,8 +219,7 @@ local function Choice(page, y, text, choices, get, set)
 		for _, c in ipairs(choices) do
 			if c[1] == get() then
 				-- A font choice is written in that font
-				value:SetFont(GameFontNormal:GetFont(), 13, "")
-				if c.font then value:SetFont(c.font, 14, "") end
+				ns.UseFont(value, c.font, c.font and 14 or 13)
 				box:SetText(c[2])
 				picture:SetShown(c.icon ~= nil)
 				if c.icon then
@@ -303,12 +301,8 @@ local function Preview(page, y, changed)
 			local c = range.colors[state]
 			local size = min(range.textSize, 22)
 			local font = ns.FONTS[range.font]
-			number:SetFont(GameFontNormal:GetFont(), size, "THICKOUTLINE")
-			unit:SetFont(GameFontNormal:GetFont(), max(floor(size * 0.5), 8), "OUTLINE")
-			if font then
-				number:SetFont(font, size, "THICKOUTLINE")
-				unit:SetFont(font, max(floor(size * 0.5), 8), "OUTLINE")
-			end
+			ns.UseFont(number, font, size, "THICKOUTLINE")
+			ns.UseFont(unit, font, max(floor(size * 0.5), 8), "OUTLINE")
 			number:SetText(ns.RangeNumber(s[1], s[2], s[3]))
 			unit:SetText(range.units == "meters" and L.METERS or L.YARDS)
 			number:SetTextColor(c.r, c.g, c.b)
@@ -539,6 +533,8 @@ local function Build()
 	y = Check(page, y, L.OPT_RANGE_ON, function() return range.enabled end, function(v) range.enabled = v RangeChanged() end)
 	y = Check(page, y, L.OPT_ONLY_COMBAT, function() return range.onlyCombat end, function(v) range.onlyCombat = v RangeChanged() end)
 	y = Check(page, y, L.OPT_SHOW_STATE, function() return range.showState end, function(v) range.showState = v RangeChanged() end)
+	y = Check(page, y, format(L.OPT_DEAD_LABEL, L.RANGE.dead), function() return range.deadLabel end,
+		function(v) range.deadLabel = v RangeChanged() end)
 	y = Check(page, y, L.OPT_FAR, function() return range.farGlow end, function(v) range.farGlow = v RangeChanged() end)
 	y = Section(page, y, L.SEC_LOOK)
 	y = Choice(page, y, L.OPT_DISPLAY, { { "number", L.DISPLAY.number }, { "bracket", L.DISPLAY.bracket } },

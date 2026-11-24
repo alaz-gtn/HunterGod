@@ -33,6 +33,7 @@ local defaults = {
 		display = "number", -- number | bracket
 		font = "fredoka", -- fredoka | changa | game
 		showState = false,
+		deadLabel = true, -- "Dead zone" under the number while you're in it, even with the state off
 		farGlow = true, -- light blue and glowing in the last 5 yards of your reach
 		textSize = 26,
 		colors = {
@@ -70,6 +71,33 @@ end
 
 function ns.Print(msg)
 	print(L.PREFIX .. msg)
+end
+
+-- Fonts as shared font objects, one per file, size and outline, applied with SetFontObject.
+-- Each text loading the font file itself (SetFont on the FontString) left some texts undrawn in
+-- Forever: FarmGod's tabs, 23 Nov 2026, had their text, shown, at full alpha and with a width,
+-- and nothing on screen. The game's font goes in first, so a font that can't load still shows
+local fontObjects, fontCount = {}, 0
+function ns.UseFont(fontString, file, size, flags)
+	local gameFont = GameFontNormal:GetFont()
+	file, flags = file or gameFont, flags or ""
+	local key = file .. "|" .. size .. "|" .. flags
+	local font = fontObjects[key]
+	if not font then
+		fontCount = fontCount + 1
+		font = CreateFont("HunterGodFont" .. fontCount)
+		font:SetFont(gameFont, size, flags)
+		font:SetFont(file, size, flags)
+		fontObjects[key] = font
+	end
+	-- The font object brings its own colour and shadow: the text keeps the ones it had
+	local r, g, b, a = fontString:GetTextColor()
+	local sx, sy = fontString:GetShadowOffset()
+	local sr, sg, sb, sa = fontString:GetShadowColor()
+	fontString:SetFontObject(font)
+	if r then fontString:SetTextColor(r, g, b, a) end
+	if sx then fontString:SetShadowOffset(sx, sy) end
+	if sr then fontString:SetShadowColor(sr, sg, sb, sa) end
 end
 
 -- Forever hides some values from addons during combat

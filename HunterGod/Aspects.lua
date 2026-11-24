@@ -320,16 +320,12 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		trapsDB = ns.db.traps
 		ns.Movable(frame, "aspect", { "CENTER", "CENTER", 0, 120 }, L.TAB_ASPECTS)
 		traps.text:SetText(L.TRAPS_READY)
-		for _, font in ipairs({ GameFontNormal:GetFont(), ns.FONTS and ns.FONTS[ns.db.range.font] }) do
-			traps.text:SetFont(font, 24, "THICKOUTLINE")
-		end
+		ns.UseFont(traps.text, ns.FONTS and ns.FONTS[ns.db.range.font], 24, "THICKOUTLINE")
 		traps:SetWidth(traps.text:GetStringWidth() + 44)
 		ns.Movable(traps, "traps", { "CENTER", "CENTER", 0, -40 }, L.TRAPS_READY)
 		LearnTrueshot()
 		trueshot.icon:SetTexture(SpellIcon(TRUESHOT[1]))
-		for _, font in ipairs({ GameFontNormal:GetFont(), ns.FONTS and ns.FONTS[ns.db.range.font] }) do
-			trueshot.text:SetFont(font, 16, "THICKOUTLINE")
-		end
+		ns.UseFont(trueshot.text, ns.FONTS and ns.FONTS[ns.db.range.font], 16, "THICKOUTLINE")
 		ns.Movable(trueshot, "trueshot", { "CENTER", "CENTER", 160, 120 }, trueshotName or L.TRUESHOT)
 		table.insert(ns.refreshers, ns.UpdateTrueshot)
 		-- Its countdown ticks on its own
@@ -451,9 +447,7 @@ local function StyleFreeze(button, container)
 	button:SetDurationCooldown(cooldown)
 	local numbers = cooldown.GetCountdownFontString and cooldown:GetCountdownFontString()
 	if numbers then
-		for _, font in ipairs({ GameFontNormal:GetFont(), ns.FONTS and ns.FONTS[ns.db.range.font] }) do
-			numbers:SetFont(font, 15, "THICKOUTLINE")
-		end
+		ns.UseFont(numbers, ns.FONTS and ns.FONTS[ns.db.range.font], 15, "THICKOUTLINE")
 		numbers:ClearAllPoints()
 		numbers:SetPoint("CENTER", button, "CENTER", 0, 0)
 		numbers:SetTextColor(0.8, 0.95, 1)

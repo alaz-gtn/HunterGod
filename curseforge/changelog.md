@@ -1,3 +1,10 @@
+# 1.2.2
+
+- Map pins no longer float in the middle of the screen over your character: a vendor's pin the world map had let go of could show up there (a bullet vendor in Dustwallow Marsh, for one). A pin now only shows on the open world map or on the minimap.
+- The low ammo warning no longer pops up by mistake with plenty of arrows: right after a loading screen the game can count your ammo short for a moment, so a low count now has to still be low two seconds later.
+- "Dead zone" under the range number while you're in the dead zone, even with the state off. Its own switch in Range, on by default.
+- The addon's fonts are applied the way that fixed texts Forever didn't draw.
+
 # 1.2.1
 
 - Forever's newer zones on the map, Mount Hyjal among them: 5 more stable masters (Aili Greenwillow in Mount Hyjal, for one), 6 hunter trainers, 15 ammo vendors and 55 pet food vendors. The data now comes from the QuestieDB addon itself, which is more up to date.

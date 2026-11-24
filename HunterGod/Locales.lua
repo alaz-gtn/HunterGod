@@ -197,6 +197,7 @@ local L = {
 	RANGE_YES = "yes",
 	RANGE_NO = "no",
 	OPT_SHOW_STATE = "Also write the state (in range, dead zone...)",
+	OPT_DEAD_LABEL = "Write \"%s\" while you're in the dead zone",
 	OPT_FAR = "Light blue and glowing in the last 5 yards of your reach",
 	OPT_STYLE = "Style",
 	STYLE = { text = "Text", icon = "Colour square", both = "Square and text" },
@@ -416,6 +417,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.RANGE_YES = "sí"
 	L.RANGE_NO = "no"
 	L.OPT_SHOW_STATE = "Escribir también el estado (a distancia, zona muerta...)"
+	L.OPT_DEAD_LABEL = "Escribir «%s» mientras estés en la zona muerta"
 	L.OPT_FAR = "Azul claro y con brillo en las últimas 5 yardas de tu alcance"
 	L.OPT_STYLE = "Estilo"
 	L.STYLE = { text = "Texto", icon = "Cuadrado de color", both = "Cuadrado y texto" }
