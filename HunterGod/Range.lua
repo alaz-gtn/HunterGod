@@ -330,19 +330,32 @@ function ns.RangeNumber(low, high, value)
 	return format("%d+", floor(low * scale + 0.5))
 end
 
+-- The states said in words instead of a number: melee (0 goes without saying, in Survival too) and
+-- the dead zone
+local WORD_STATES = { melee = true, hit = true, dead = true }
+
 local function Show(state, low, high, value)
 	local c = db.colors[state]
-	frame.text:SetText(ns.RangeNumber(low, high, value))
-	frame.unit:SetText(db.units == "meters" and L.METERS or L.YARDS)
-	local label = db.showState or (state == "dead" and db.deadLabel)
-	frame.state:SetText(label and L.RANGE[state] or "")
+	-- Melee and the dead zone in words, a little smaller; any other distance is the number alone,
+	-- its colour saying the rest (green in range, light blue at the edge, grey out of it)
+	local words = db.deadLabel and WORD_STATES[state] or false
+	if words ~= frame.words then
+		local font = FONTS[db.font] or GameFontNormal:GetFont()
+		ns.UseFont(frame.text, font, words and max(floor(db.textSize * 0.7), 10) or db.textSize, "THICKOUTLINE")
+		frame.words = words
+	end
+	frame.text:SetText(words and L.RANGE[state] or ns.RangeNumber(low, high, value))
+	-- The number alone, unless you want yd or m after it
+	local unitShown = db.unitLabel and not words
+	frame.unit:SetText(unitShown and (db.units == "meters" and L.METERS or L.YARDS) or "")
+	frame.state:SetText("")
 	for _, part in ipairs({ frame.text, frame.unit, frame.state }) do
 		part:SetTextColor(c.r, c.g, c.b)
 	end
 	frame.icon:SetColorTexture(c.r, c.g, c.b)
 	local text, icon = db.style ~= "icon", db.style ~= "text"
 	local width = (icon and db.textSize * 0.7 or 0) + (icon and text and 6 or 0)
-		+ (text and frame.text:GetStringWidth() + 3 + frame.unit:GetStringWidth() or 0)
+		+ (text and frame.text:GetStringWidth() + (unitShown and 3 + frame.unit:GetStringWidth() or 0) or 0)
 	frame:SetSize(max(width, 16), db.textSize + 4)
 	-- At the edge of your reach a soft light breathes behind it
 	local far = state == "far"
@@ -366,6 +379,7 @@ function ns.StyleRange()
 	-- A thick black outline keeps the number readable on any ground
 	local font = FONTS[db.font] or gameFont
 	ns.UseFont(frame.text, font, db.textSize, "THICKOUTLINE")
+	frame.words = false -- the number's size: melee's and the dead zone's words set theirs when they show
 	ns.UseFont(frame.unit, font, unitSize, "OUTLINE")
 	ns.UseFont(frame.state, font, stateSize, "OUTLINE")
 	ns.UseFont(melee.text, font, 34, "THICKOUTLINE")
@@ -557,9 +571,8 @@ function ns.UpdateThreat()
 	-- Placed only when where it hangs changes: placing it on every update undid a drag
 	local targetPlate = not ns.unlocked and C_NamePlate and C_NamePlate.GetNamePlateForUnit
 		and C_NamePlate.GetNamePlateForUnit("target")
-	-- With the range under the nameplate, the warning goes under the range (and its state)
-	local under = targetPlate and db.enabled and db.anchor == "plate" and db.plateSide == "bottom"
-		and -(2 + ((frame.state:GetText() or "") ~= "" and max(floor(db.textSize * 0.45), 8) + 1 or 0))
+	-- With the range under the nameplate, the warning goes under the range
+	local under = targetPlate and db.enabled and db.anchor == "plate" and db.plateSide == "bottom" and -2
 	local anchor = under and ("under" .. under) or targetPlate or "free"
 	if threat.anchor ~= anchor then
 		threat.anchor = anchor

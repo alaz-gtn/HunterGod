@@ -160,7 +160,8 @@ C_Spell = {
 }
 C_UnitAuras = { GetAuraDataByIndex = function(_, i) local name = G.auras[i] if not name then return end
     local t = G.auraTimes and G.auraTimes[name]
-    return { name = name, expirationTime = t and t[1] or 0, duration = t and t[2] or 0 } end,
+    return { name = name, expirationTime = t and t[1] or 0, duration = t and t[2] or 0,
+      spellId = G.auraIDs and G.auraIDs[name] } end,
   GetAuraDataBySpellName = function() return G.wrathAura end }
 C_Secrets = { ShouldAurasBeSecret = function() return G.secret end }
 C_NamePlate = { GetNamePlateForUnit = function() return G.plate end }
@@ -205,6 +206,9 @@ local function Texture() local t = { shown = true } setmetatable(t, { __index = 
   elseif k == "GetTextColor" then if rawget(self, "color") then return unpack(self.color) end
   elseif k == "GetText" then return self.text
   elseif k == "AddMaskTexture" then self.maskTexture = ...
+  elseif k == "SetVertexColor" then self.vertex = { ... }
+  elseif k == "SetPoint" then self.points = rawget(self, "points") or {} table.insert(self.points, { ... })
+  elseif k == "ClearAllPoints" then self.points = {}
   elseif k == "CreateAnimationGroup" then return CreateFrame("Frame") end
 end end }) return t end
 NAMED = {}
@@ -248,8 +252,21 @@ function CreateFrame(kind, name, parent, template)
   function f:SetClampedToScreen(on) self.clamped = on end
   function f:SetParent(p) self.parent = p end
   function f:SetTexture(...) self.texArgs = { ... } end
+  function f:SetScale(s) self.scale = s end
+  function f:Play() self.playing = true end
+  function f:Stop() self.playing = false end
+  -- Forever's aura container: a slot whose button the addon dresses; the game plays what it's given
   if kind == "AuraContainer" then
-    function f:AddAuraSlot(key, filter, opts) self.slot = { key = key, filter = filter, opts = opts } end
+    function f:AddAuraSlot(key, filter, opts)
+      self.slot = { key = key, filter = filter, opts = opts }
+      local button = CreateFrame("Button", nil, self)
+      button.shownAnims, button.assignedAnims = {}, {}
+      function button:AddAuraShownAnimation(g) table.insert(self.shownAnims, g) end
+      function button:AddAuraAssignedAnimation(g) table.insert(self.assignedAnims, g) end
+      function button:SetDurationText(text, o) self.durationText = { text = text, options = o } end
+      self.button = button
+      if opts.initializeFrame then opts.initializeFrame(button) end
+    end
     function f:SetUnit(u) self.unit = u end
     function f:SetEnabled(on) self.enabled = on end
     function f:UpdateAllAuras() self.updates = (self.updates or 0) + 1 end
@@ -291,6 +308,21 @@ TOOLTIP = {}
 GameTooltip = { SetOwner = function() TOOLTIP = {} end, AddLine = function(_, s) table.insert(TOOLTIP, s) end, Show = function() end, SetBagItem = function() end }
 GameTooltip_Hide = function() end
 SlashCmdList = {}
+-- Tracking: the minimap's list and the dungeon you're in
+SPELLS[19883], SPELLS[1494], SPELLS[19884], SPELLS[19885] = "Track Humanoids", "Track Beasts", "Track Undead", "Track Hidden"
+SPELLS[24293] = "Improved Tracking"
+SPELLS[6150], SPELLS[1299448], SPELLS[415407] = "Quick Shots", "Quick Strikes", "Rapid Killing"
+-- The game's countdown text: whole seconds rounded up
+Enum.NumericRuleFormatRounding = { Up = 2 }
+C_StringUtil = { CreateNumericRuleFormatter = function()
+  return { SetBreakpoints = function(self, rules) self.rules = rules end }
+end }
+TRACKING = {}
+C_Minimap = { GetNumTrackingTypes = function() return #TRACKING end, GetTrackingInfo = function(i) return TRACKING[i] end }
+GetInstanceInfo = function() return "Dungeon", G.instance or "none", 1, "", 5, 0, false, G.instanceID or 36 end
+-- On a flight, mounted
+UnitOnTaxi = function() return G.taxi or false end
+IsMounted = function() return G.mounted or false end
 -- Talent reset: the trainer's options, the game's price dialog, the gold and the server's clock
 GOSSIP_OPTIONS = {}
 C_GossipInfo = { GetOptions = function() return GOSSIP_OPTIONS end, SelectOption = function() end }
@@ -565,6 +597,7 @@ def number_at(dist):
 
 
 db.range.display = "bracket"
+db.range.unitLabel = True  # the checks below read "25-28 yd"; the number alone is checked on its own
 
 
 def colour():
@@ -582,21 +615,25 @@ db.range.farGlow = True
 check(range_at(37) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6) and not rng.glow.shown,
       "out of range is grey, not the edge")
 check(range_at(9) == f"8-10 {yd}", f"9 yd: Auto Shot reaches from 8: {rng.text.text}")
-check(range_at(3) == f"0-5 {yd}" and colour()[:2] == (1, 0.82), f"3 yd: melee, yellow: {rng.text.text}")
-check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2) and rng.state.text == L.RANGE.dead,
-      f"6 yd: dead zone, red, and it says so under the number: {rng.text.text} / {rng.state.text}")
-check(range_at(3) == f"0-5 {yd}" and rng.state.text == "", f"only there: not in melee ({rng.state.text})")
+check(range_at(3) == f"{L.RANGE.melee} " and colour()[:2] == (1, 0.82) and rng.text.font[2] == int(db.range.textSize * 0.7),
+      f"3 yd: melee, yellow, in words (0 goes without saying): {rng.text.text}")
+check(range_at(6) == f"{L.RANGE.dead} " and colour()[:2] == (1, 0.2) and rng.state.text == ""
+      and rng.text.font[2] == int(db.range.textSize * 0.7),
+      f"6 yd: dead zone, red, its name instead of the number, a little smaller: {rng.text.text} / {rng.text.font[2]}")
+check(range_at(27) == f"25-28 {yd}" and rng.state.text == "" and rng.text.font[2] == db.range.textSize,
+      f"only there: in melee the number again, at its size ({rng.text.text})")
 db.range.deadLabel = False
 check(range_at(6) == f"5-8 {yd}" and rng.state.text == "", "with that option off, just the number")
 db.range.deadLabel = True
+db.range.unitLabel = False
+check(range_at(27) == "25-28 " and rng.unit.text == "", f"by default the number alone, without yd: {rng.text.text}")
+db.range.unitLabel = True
 check(range_at(38) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6), f"38 yd: out of range, grey: {rng.text.text}")
 check(range_at(150) == f"100+ {yd}", f"150 yd: {rng.text.text}")
 db.range.units = "meters"
 check(range_at(27) == f"23-26 {L.METERS}", f"in metres: {rng.text.text}")
 db.range.units = "yards"
-db.range.showState = True
-check(range_at(27) == f"25-28 {yd}" and rng.state.text == L.RANGE.ranged, f"with the state too: {rng.state.text}")
-db.range.showState = False
+check(range_at(27) == f"25-28 {yd}" and rng.state.text == "", "in range: the number alone, its colour says the rest")
 G.Uncache(ns, 25)
 G.Uncache(ns, 30)
 check(range_at(27) == f"20-28 {yd}", f"items not loaded: those steps are skipped: {rng.text.text}")
@@ -653,6 +690,7 @@ S.secretRange = True
 check(range_at(27) is None, "hidden values in combat: nothing shown")
 S.secretRange = False
 S.secretInteract = True
+db.range.deadLabel = False  # these read the number the dead zone's name would cover
 check(range_at(6) == f"5-10 {yd}" and colour()[:2] == (1, 0.2),
       f"too close for Auto Shot with the close check hidden in combat: dead zone, not out of range: {rng.text.text}")
 check(range_at(38) == f"35-40 {yd}" and colour()[:2] == (0.6, 0.6), f"and really out of range is still out: {rng.text.text}")
@@ -663,6 +701,7 @@ S.autoMin = 10
 check(range_at(9) == f"8-10 {yd}" and colour()[:2] == (1, 0.2),
       f"at 9 yd, past the 8 yard check but too close for Auto Shot: dead zone, not 35-40: {rng.text.text}")
 check(range_at(12) == f"10-15 {yd}" and colour()[:2] == (0.3, 1), f"and at 12 yd it shoots again: {rng.text.text}")
+db.range.deadLabel = True
 S.autoMin = None
 S.autoBlocked = True
 check(range_at(18) == f"15-20 {yd}" and colour()[:2] == (0.6, 0.6),
@@ -742,8 +781,8 @@ S.target = lua.table(hostile=True)
 S.meleeLies = True
 check(range_at(38) == f"35-40 {yd}" and not melee.shown and colour()[:2] == (0.6, 0.6),
       f"melee spells saying 'in range' at 38 yd: still out of range, no MELEE RANGE ({rng.text.text})")
-check(range_at(6) == f"5-8 {yd}" and not melee.shown, "nor in the dead zone: the 5 yd item says no")
-check(range_at(3) == f"0-5 {yd}" and melee.shown, "at 3 yd it is melee")
+check(range_at(6) == f"{L.RANGE.dead} " and not melee.shown, "nor in the dead zone: the 5 yd item says no")
+check(range_at(3) == f"{L.RANGE.melee} " and melee.shown, "at 3 yd it is melee")
 S.meleeLies = False
 range_at(27)
 
@@ -756,11 +795,10 @@ said = [p for p in printed if L.STYLE_NOW_MELEE in p]
 check(ns.IsMelee() and len(said) == 1, f"Strider Kick learned: melee, and the chat says so: {printed}")
 G.Fire("SPELLS_CHANGED")
 check(len([p for p in printed if L.STYLE_NOW_MELEE in p]) == 1, "said only once")
-db.range.showState = True
 S.combat = False
-check(range_at(3) == f"0-5 {yd}" and colour()[:2] == (0.3, 1) and rng.state.text == L.RANGE.hit and not melee.shown,
+check(range_at(3) == f"{L.RANGE.hit} " and colour()[:2] == (0.3, 1) and rng.state.text == "" and not melee.shown,
       f"in melee green and no MELEE RANGE: where you want to be ({rng.state.text})")
-check(range_at(27) == f"25-28 {yd}" and colour()[:2] == (1, 0.82) and rng.state.text == L.RANGE.approach
+check(range_at(27) == f"25-28 {yd}" and colour()[:2] == (1, 0.82) and rng.state.text == ""
       and not melee.shown, f"at range yellow, get closer; out of combat no warning ({rng.state.text})")
 range_at(33)
 check(not rng.glow.shown and colour()[:2] == (1, 0.82), "no max range glow in melee")
@@ -770,7 +808,7 @@ for d in (3, 6, 27, 50):
     range_at(d)
     blinked = blinked or melee.shown
 check(not blinked and colour()[:2] == (0.6, 0.6), "in combat, near or far: no blinking warning at all in melee")
-check(range_at(6) == f"5-8 {yd}" and colour()[:2] == (1, 0.2), "the dead zone still red")
+check(range_at(6) == f"{L.RANGE.dead} " and colour()[:2] == (1, 0.2), "the dead zone still red")
 S.combat = False
 ns.SetUnlocked(True)
 check(not melee.shown, "nor a sample of it to move")
@@ -793,7 +831,6 @@ check(not ns.IsMelee() and len(said) == 1, f"talents reset: back to ranged: {pri
 out = slash("style")
 check(len(out) == 1 and L.PLAYSTYLE.ranged in out[0] and "Strider Kick" in out[0] and "Expose Prey" in out[0],
       f"and which talents it looked for: {out}")
-db.range.showState = False
 range_at(27)
 
 # One number, like GoodRange: exact at each crossing, carried at the closing rate in between
@@ -834,6 +871,7 @@ ns.StyleRange()
 
 # ---------------------------------------------------------------- Aspects
 asp = G.NAMED["HunterGodAspect"]
+saved_target, S.target = S.target, None
 S.auras = lua.table("Power Word: Fortitude", "Aspect of the Cheetah")
 G.Fire("UNIT_AURA", "player")
 check(ns.CurrentAspect() == "cheetah" and not asp.shown, "reads Cheetah from your buffs; no warning out of combat")
@@ -889,6 +927,63 @@ ns.UpdateAspect()
 check(asp.shown and "Hawk" in asp.text.text, "without melee talents, Hawk again")
 G.Fire("PLAYER_REGEN_ENABLED")
 S.known[13161] = False
+# Before the pull: an enemy targeted out of combat, and a click puts the right aspect on
+clickA = G.NAMED["HunterGodReminderClickaspect"]
+S.auras = lua.table("Aspect of the Cheetah")
+G.Fire("UNIT_AURA", "player")
+check(not asp.shown and not clickA.shown, "Cheetah out of combat, no enemy targeted: nothing")
+S.target = lua.table(hostile=True)
+G.Fire("PLAYER_TARGET_CHANGED")
+check(asp.shown and clickA.shown and clickA.attrs.type1 == "spell" and clickA.attrs.spell1 == "Aspect of the Hawk"
+      and clickA.attrs.type is None, f"an enemy targeted in Cheetah: the reminder, and a click puts Hawk on: {clickA.attrs.spell1}")
+db.playstyle = "melee"
+S.known[13161] = True
+ns.UpdateAspect()
+check(clickA.attrs.spell1 == "Aspect of the Beast", f"Survival: Beast ({clickA.attrs.spell1})")
+db.playstyle = "auto"
+S.known[13161] = False
+ns.UpdateAspect()
+G.Fire("PLAYER_REGEN_DISABLED")
+S.combat = True
+ns.UpdateAspect()
+check(asp.shown and not clickA.shown, "the fight starts: the warning stays, the click goes (the game won't have it)")
+S.combat = False
+G.Fire("PLAYER_REGEN_ENABLED")
+check(asp.shown and clickA.shown, "after it, the click is back")
+S.target = lua.table(hostile=False)
+G.Fire("PLAYER_TARGET_CHANGED")
+check(not asp.shown and not clickA.shown, "a friendly target: nothing")
+# Missing out of combat: it shows with no target, but not travelling, on a flight or mounted
+S.target = None
+S.auras = lua.table()
+G.Fire("UNIT_AURA", "player")
+check(asp.shown and asp.icon.desat and clickA.shown and clickA.attrs.spell1 == "Aspect of the Hawk",
+      "no aspect at all out of combat (you died, say): the reminder, to click")
+S.auras = lua.table("Aspect of the Monkey")
+G.Fire("UNIT_AURA", "player")
+check(asp.shown, "Monkey when you use Hawk: there too")
+S.auras = lua.table("Aspect of the Cheetah")
+G.Fire("UNIT_AURA", "player")
+check(not asp.shown, "travelling in Cheetah: fine out of combat")
+S.auras = lua.table()
+G.Fire("UNIT_AURA", "player")
+S.mounted = True
+G.Fire("PLAYER_MOUNT_DISPLAY_CHANGED")
+check(not asp.shown, "mounted: not now (casting would get you off)")
+S.mounted = None
+S.taxi = True
+G.Fire("PLAYER_CONTROL_LOST")
+check(not asp.shown, "on a flight: not now")
+S.taxi = None
+G.Fire("PLAYER_CONTROL_GAINED")
+check(asp.shown, "landed: there")
+db.aspect.missingAlways = False
+ns.UpdateAspect()
+check(not asp.shown, "with that option off, only in combat or before a pull")
+db.aspect.missingAlways = True
+S.auras = lua.table("Aspect of the Hawk")
+G.Fire("UNIT_AURA", "player")
+S.target = saved_target
 
 # ---------------------------------------------------------------- Traps ready
 traps = G.NAMED["HunterGodTraps"]
@@ -930,7 +1025,7 @@ G.Fire("PLAYER_REGEN_ENABLED")
 S.now += 60
 
 # ---------------------------------------------------------------- Freezing Trap time left
-containers = {c.unit: c for c in G.FRAMES.values() if c.kind == "AuraContainer"}
+containers = {c.unit: c for c in G.FRAMES.values() if c.kind == "AuraContainer" and c.unit != "player"}
 c3 = containers.get("nameplate3")
 check(len(containers) == 40 and c3 is not None and c3.enabled and c3.slot.filter == "HARMFUL",
       f"an aura container on each nameplate token: {len(containers)}")
@@ -1408,12 +1503,15 @@ check(not ts.shown, "10 minutes left: nothing yet")
 S.now = S.now + 500
 ns.UpdateTrueshot()
 check(ts.shown and ts.text.text == "1:40" and not ts.icon.desat, f"under 2 minutes: the reminder, counting down ({ts.text.text})")
+tsc = G.NAMED["HunterGodReminderClicktrueshot"]
+check(tsc.shown and tsc.attrs.type1 == "spell" and tsc.attrs.spell1 == "Trueshot Aura", "and a click casts it")
 S.secret = True  # in combat the buffs are hidden
 G.Fire("PLAYER_REGEN_DISABLED")
 S.combat = True
 S.now = S.now + 30
 G.Fire("UNIT_AURA", "player")
 check(ts.shown and ts.text.text == "1:10", f"in combat it keeps counting from when it was seen ({ts.text.text})")
+check(not tsc.shown, "in a fight it can't be clicked")
 S.now = S.now + 80
 ns.UpdateTrueshot()
 check(ts.shown and ts.text.text == "" and ts.icon.desat, "run out: the icon in grey until you cast it")
@@ -1426,10 +1524,10 @@ S.secret = False
 S.combat = False
 S.auras = lua.table("Aspect of the Hawk")
 G.Fire("PLAYER_REGEN_ENABLED")
-check(ts.shown and ts.icon.desat, "not on you after the fight (you died): grey reminder")
+check(ts.shown and ts.icon.desat and tsc.shown, "not on you after the fight (you died): grey reminder, to click")
 db.aspect.trueshot = False
 ns.UpdateTrueshot()
-check(not ts.shown, "with its option off, nothing")
+check(not ts.shown and not tsc.shown, "with its option off, nothing")
 db.aspect.trueshot = True
 S.auraTimes["Trueshot Aura"] = lua.table(0, 0)
 S.auras = lua.table("Aspect of the Hawk", "Trueshot Aura")
@@ -1454,11 +1552,6 @@ db.range.plateSide = "bottom"
 ns.UpdateThreat()
 check(G.Same(thr.point[2], rng) and thr.point[1] == "TOP" and thr.point[5] == -2,
       "with the range under the nameplate, the warning goes under the range")
-db.range.showState = True
-ns.UpdateRange()
-ns.UpdateThreat()
-check(thr.point[5] < -2, "and under its state too when it's written")
-db.range.showState = False
 db.range.plateSide = "top"
 ns.UpdateThreat()
 check(G.Same(thr.point[2], S.plate), "and back under the nameplate")
@@ -1738,11 +1831,14 @@ check(rng.shown and rng.text.text == "32" and asp.shown and ammo.shown and bar.s
       and melee.shown and miss.shown and sad.shown and hurt.shown and traps.shown and wrath.shown and thr.shown,
       "all displays show a sample")
 check(all(f.mover.shown and f.mover.width >= 140 and f.mover.height >= 44
-          for f in (rspot, asp, ammo, bar, growl, toast, melee, miss, sad, hurt, traps, wrath, tspot)),
+          for f in (rspot, G.NAMED["HunterGodReminders"], ammo, bar, growl, toast, melee, miss, sad, hurt, traps, wrath, tspot)),
       "each one with a big box to drag, even the food bar")
 check(bar.mover.level > 1, "the box sits above the food buttons")
 ts = G.NAMED["HunterGodTrueshot"]
-check(ts.shown and ts.text.text == "1:35" and ts.mover.shown, "Trueshot Aura's reminder shows a sample to move")
+trk = G.NAMED["HunterGodTracking"]
+check(ts.shown and ts.text.text == "1:35" and trk.shown and not ts.mover and not trk.mover
+      and asp.point[4] == -50 and ts.point[4] == 0 and trk.point[4] == 50 and G.NAMED["HunterGodReminders"].mover.shown,
+      "the aspect, Trueshot and tracking samples side by side, dragged together as one row")
 check(not rng.mover and not thr.mover and G.Same(rng.point[2], rspot) and G.Same(thr.point[2], tspot),
       "what you drag is the spot, never anchored to a nameplate, and the displays hang from it")
 rspot.point = lua.table("TOPLEFT", G.UIParent, "TOPLEFT", 300, -200)
@@ -1878,6 +1974,352 @@ S["class"] = "MAGE"
 G.Fire("GOSSIP_SHOW")
 check(not rnote.shown, "another class: not this addon's trainer")
 S["class"] = "HUNTER"
+
+# ---------------------------------------------------------------- Tracking in dungeons and raids
+tb, tlist, trows = ns.TrackingButton()
+G.TRACKING = lua.eval("""{
+  { name = "Find Minerals", texture = 136025, active = true, type = "spell", subType = -1, spellID = 2580 },
+  { name = "Track Beasts", texture = 132328, active = false, type = "spell", subType = 1, spellID = 1494 },
+  { name = "Track Humanoids", texture = 135942, active = false, type = "spell", subType = 1, spellID = 19883 },
+  { name = "Track Hidden", texture = 132320, active = false, type = "spell", subType = 1, spellID = 19885 },
+  { name = "Flight Master", texture = 1, active = true, type = "other", subType = 2 },
+}""")
+T = G.TRACKING
+S.known[24295] = True  # three points in Improved Tracking
+S.instance = None
+G.Fire("PLAYER_ENTERING_WORLD")
+check(not tb.shown, "out in the world with minerals on: nothing, by default")
+db.tracking.anywhere = True
+ns.UpdateTracking()
+check(tb.shown and tb.wrong == L.TRACK_WRONG % "Find Minerals", "out in the world too, if you want")
+S.taxi = True
+G.Fire("PLAYER_CONTROL_LOST")
+check(not tb.shown, "not on a flight")
+S.taxi = None
+db.tracking.anywhere = False
+G.Fire("PLAYER_CONTROL_GAINED")
+check(not tb.shown, "back to dungeons and raids only")
+S.instance, S.instanceID = "party", 36
+G.Fire("PLAYER_ENTERING_WORLD")
+check(tb.shown and tb.wrong == L.TRACK_WRONG % "Find Minerals" and not tb.text and tb.icon.tex == 135942,
+      f"a dungeon with minerals on: the reminder says what's on: {tb.wrong}")
+check(not tlist.shown, "the list starts closed")
+tb.scripts.OnClick(tb, "LeftButton")
+check(tlist.shown and trows[1].shown and trows[2].shown and len(trows) == 2,
+      "a click: the list, one bar per creature tracking (Track Hidden left out)")
+check(trows[1].attrs.type == "spell" and trows[1].attrs.spell == "Track Humanoids" and trows[2].attrs.spell == "Track Beasts"
+      and trows[1].text.text == "Track Humanoids" and trows[1].icon.tex == 135942, "Humanoids first, then Beasts: icon and name on each bar")
+tb.scripts.OnClick(tb, "LeftButton")
+check(not tlist.shown, "another click closes it")
+tb.scripts.OnClick(tb, "LeftButton")
+trows[2].hooks.OnClick(trows[2], "LeftButton", True)
+check(tlist.shown, "pressing a bar: the spell goes off")
+trows[2].hooks.OnClick(trows[2], "LeftButton", False)
+check(not tlist.shown, "letting go: the list closes")
+T[1].active, T[2].active = False, True
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(not tb.shown and db.tracking.last == "Track Beasts", "Beasts on: gone, and Beasts is the one you use")
+T[2].active, T[4].active = False, True
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(tb.shown and tb.wrong == L.TRACK_WRONG % "Track Hidden" and tb.icon.tex == 132328,
+      "Track Hidden doesn't count: back, with Beasts' icon")
+tb.scripts.OnClick(tb, "LeftButton")
+check(abs(trows[2].text.color[1] - 1) < 1e-6 and abs(trows[1].text.color[1] - 0.93) < 1e-6, "the one you use in gold")
+tb.scripts.OnClick(tb, "LeftButton")
+T[4].active = False
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(tb.shown and tb.wrong == L.TRACK_NONE, "nothing on: says so")
+# A fight: the reminder still follows, the list waits
+S.combat = True
+tb.scripts.OnClick(tb, "LeftButton")
+check(not tlist.shown, "in a fight the list doesn't open")
+T[3].active = True
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(not tb.shown, "Humanoids on in a fight: gone straight away")
+S.combat = False
+G.Fire("PLAYER_REGEN_ENABLED")
+T[3].active = False
+G.Fire("MINIMAP_UPDATE_TRACKING")
+# Improved Tracking
+S.known[24295] = None
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(not tb.shown, "no points in Improved Tracking: nothing")
+db.tracking.onlyTalent = False
+ns.UpdateTracking()
+check(tb.shown, "unless you want it anyway")
+db.tracking.onlyTalent = True
+S.known[24297] = True
+ns.UpdateTracking()
+check(tb.shown, "five points: there")
+# Right-click: not in this dungeon
+tb.scripts.OnClick(tb, "RightButton")
+check(not tb.shown, "right-click: hidden")
+G.Fire("PLAYER_ENTERING_WORLD")
+check(not tb.shown, "still hidden in the same dungeon")
+S.instanceID = 48
+G.Fire("PLAYER_ENTERING_WORLD")
+check(tb.shown, "another dungeon: back")
+S.instance = "raid"
+G.Fire("PLAYER_ENTERING_WORLD")
+check(tb.shown, "raids too")
+S.instance = "pvp"
+G.Fire("PLAYER_ENTERING_WORLD")
+check(not tb.shown, "not in battlegrounds")
+S.instance = "party"
+db.tracking.enabled = False
+ns.UpdateTracking()
+check(not tb.shown, "the option off: nothing")
+db.tracking.enabled = True
+# Forever's own IDs: a hunter tracking by its kind, Track Hidden by its name
+G.TRACKING = lua.eval("""{
+  { name = "Find Herbs", texture = 1, active = true, type = "spell", subType = -1, spellID = 2383 },
+  { name = "Track Hidden", texture = 2, active = false, type = "spell", subType = 1, spellID = 1999885 },
+  { name = "Track Dragonkin", texture = 3, active = false, type = "spell", subType = 1, spellID = 1999879 },
+}""")
+ns.UpdateTracking()
+tb.scripts.OnClick(tb, "LeftButton")
+check(tb.shown and trows[1].attrs.spell == "Track Dragonkin" and not trows[2].shown, f"other IDs: still told apart: {trows[1].attrs.spell}")
+tb.scripts.OnClick(tb, "LeftButton")
+G.TRACKING = lua.eval('{ { name = "Find Herbs", texture = 1, active = true, type = "spell", subType = -1, spellID = 2383 } }')
+ns.UpdateTracking()
+check(not tb.shown, "no creature tracking learnt yet: nothing to remind")
+out = slash("rastreos" if es else "trackinglist")
+check(len(out) == 2 and "Improved Tracking" in out[0] and "Find Herbs" in out[1], f"/huntergod trackinglist: the talent and each tracking: {out}")
+# Trying it anywhere
+G.TRACKING = T
+T[2].active = True
+S.instance = None
+G.Fire("PLAYER_ENTERING_WORLD")
+check(not tb.shown, "out in the world: nothing")
+slash("rastreo" if es else "tracking")
+check(tb.shown and tb.wrong == L.TRACK_WRONG % "Track Beasts", "/huntergod tracking: there, with what you track now")
+tb.scripts.OnClick(tb, "LeftButton")
+check(tlist.shown and trows[1].shown and trows[2].shown, "and its list to try")
+T[2].active, T[3].active = False, True
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(tb.wrong == L.TRACK_WRONG % "Track Humanoids" and abs(trows[1].text.color[1] - 1) < 1e-6, "the list and the text follow what you pick")
+S.now = S.now + 21
+G.RunTimers()
+check(not tb.shown and not tlist.shown, "and it goes after a while")
+ns.TestTracking()
+tb.scripts.OnClick(tb, "RightButton")
+check(not tb.shown, "a right-click ends the test")
+T[3].active = False
+db.tracking.anywhere = True
+ns.UpdateTracking()
+check(tb.shown, "out in the world with nothing on, if you want it there: there")
+tb.scripts.OnClick(tb, "RightButton")
+check(not tb.shown, "right-click: not in this zone")
+ns.SetUnlocked(True)
+check(tb.shown and tb.wrong == L.TRACK_NONE and G.NAMED["HunterGodReminders"].mover.shown, "unlocked: a sample, dragged with the row")
+tb.scripts.OnClick(tb, "LeftButton")
+check(not tlist.shown, "no list while dragging")
+ns.SetUnlocked(False)
+check(not tb.shown, "locked: gone")
+
+# ---------------------------------------------------------------- The row of reminders
+rgroup = G.NAMED["HunterGodReminders"]
+asp, ts, tb = G.NAMED["HunterGodAspect"], G.NAMED["HunterGodTrueshot"], G.NAMED["HunterGodTracking"]
+check(asp.width == 40 and ts.width == 40 and tb.width == 40, "the three icons the same size")
+saved = (asp.shown, ts.shown, tb.shown)
+asp.shown, ts.shown, tb.shown = False, False, True
+ns.LayoutReminders()
+check(tb.point[4] == 0 and G.Same(tb.point[2], rgroup), f"one: in the middle ({tb.point[4]})")
+asp.shown = True
+ns.LayoutReminders()
+check(asp.point[4] == -25 and tb.point[4] == 25, f"two: side by side, centred ({asp.point[4]}, {tb.point[4]})")
+ts.shown = True
+ns.LayoutReminders()
+check(asp.point[4] == -50 and ts.point[4] == 0 and tb.point[4] == 50 and rgroup.width == 140,
+      f"three: aspect, Trueshot and tracking, centred ({asp.point[4]}, {ts.point[4]}, {tb.point[4]})")
+asp.shown, ts.shown, tb.shown = saved
+ns.LayoutReminders()
+check(not G.NAMED["HunterGodTracking"].scripts.OnClick is None and tb.arrow.tex.endswith("arrow"), "the tracking icon has its arrow")
+
+# ---------------------------------------------------------------- Procs: wind and a target around you
+S.secret = False
+S.combat = False
+MEDIA = "Interface\\AddOns\\HunterGod\\media\\"
+
+
+def pboxes():
+    return [f for f in G.FRAMES.values() if f.kind == "AuraContainer" and f.unit == "player"]
+
+
+def pwatched(b):
+    return sorted(b.slot.opts.candidateFilters.includeSpellIDs.keys())
+
+
+def files(art):
+    return [e[1].tex for e in art.tinted.values()]
+
+
+def tints(art):
+    return [tuple(round(c, 2) for c in e[1].vertex.values()) for e in art.tinted.values()]
+
+
+def spots(art):
+    return {(e[1].points[1][4], e[1].points[1][5], e[2]) for e in art.placed.values()}
+
+
+speed, kill = ns.ProcsState("speed"), ns.ProcsState("kill")
+check(len(pboxes()) == 2 and all(b.slot.filter == "HELPFUL" and b.enabled for b in pboxes()),
+      "an aura container for each proc, on your buffs, built at login")
+check(pwatched(speed.container) == [6150, 1299448] and pwatched(kill.container) == [415407],
+      f"Quick Shots and Quick Strikes, and Rapid Killing: {pwatched(speed.container)}, {pwatched(kill.container)}")
+sb, kb = speed.container.button, kill.container.button
+check(len(sb.shownAnims) == 3 and len(sb.assignedAnims) == 3,
+      "the wind: two columns and their breath to loop, a gust for when it procs")
+check(len(kb.shownAnims) == 2 and len(kb.assignedAnims) == 4, "the target: its turn and breath, and its landing")
+wind, target = speed.dressed, kill.dressed
+check(wind is not None and wind.ready and target is not None and target.ready, "the game takes them")
+check(files(wind).count(MEDIA + "wind_glow") == 4 and files(wind).count(MEDIA + "wind_core") == 4,
+      "two columns of wind, calm and burst")
+check(files(target).count(MEDIA + "ring_core") == 2 and files(target).count(MEDIA + "ring_base") == 2,
+      "a target on the ground, calm and burst")
+check(wind.calm.alpha == 0.35 and wind.strike.alpha == 0.85, "the burst strong, the calm fainter")
+check({(x * side, y) for x, y, side in spots(wind)} == {(140, 0)} and {side for _, _, side in spots(wind)} == {-1, 1},
+      f"140 out from the middle on each side: {spots(wind)}")
+check(spots(target) == {(0, -150, 0)}, f"the target in the middle, at your feet: {spots(target)}")
+check(tints(wind)[0] == (0.67, 0.83, 0.45) and tints(wind)[2][0] > 0.85, f"the hunter's green, the cores nearly white: {tints(wind)[:3]}")
+check(tints(target)[0] == (1, 0.38, 0.18), f"the target red: {tints(target)[0]}")
+timer = sb.durationText
+rules = timer and timer.options and timer.options.textFormatter.rules
+check(timer is not None and G.Same(timer.text, wind.timer) and rules[2].format == "%d" and rules[2].rounding == 2,
+      "the seconds it has left: the game writes them, whole and rounded up")
+check(wind.timer.font[2] == 20 and target.timer.font[2] == 16 and wind.timer.shown and target.timer.shown,
+      "the target's seconds a little smaller, inside it")
+holder, place = speed.holder, speed.place
+check(place.point[1] == "CENTER" and G.Same(place.point[2], G.UIParent) and place.point[5] == -20
+      and G.Same(holder.point[2], place) and holder.scale == 0.6 and kill.holder.scale == 0.6,
+      "around you: a bit under the middle, at 60%")
+check(not speed.spot.shown, "the samples are hidden")
+
+S.auras = lua.table("Quick Shots")
+S.auraTimes = lua.table_from({"Quick Shots": lua.table(S.now + 10, 12)})
+S.auraIDs = lua.table_from({"Quick Shots": 999001})
+G.Fire("UNIT_AURA", "player")
+new = ns.ProcsState("speed").container
+check(not G.Same(new, speed.container) and pwatched(new) == [6150, 999001, 1299448] and not speed.container.enabled
+      and not holder.shown, f"a Quick Shots with another number: a new container watches it too, the old one is off: {pwatched(new)}")
+check(db.procs.learned[999001] == "speed" and G.Same(ns.ProcsState("kill").container, kill.container),
+      "it's remembered as the wind's, and the target is left alone")
+S.auras = lua.table("Quick Strikes")
+S.auraTimes = lua.table_from({"Quick Strikes": lua.table(0, 0)})
+S.auraIDs = lua.table_from({"Quick Strikes": 1299448})
+G.Fire("UNIT_AURA", "player")
+check(pwatched(ns.ProcsState("speed").container) == [6150, 999001] and db.procs.ignored[1299448],
+      "one that never ends is a passive: left out")
+built = len(pboxes())
+S.combat = True
+S.auras = lua.table("Rapid Killing")
+S.auraTimes = lua.table_from({"Rapid Killing": lua.table(S.now + 15, 20)})
+S.auraIDs = lua.table_from({"Rapid Killing": 999002})
+G.Fire("UNIT_AURA", "player")
+check(len(pboxes()) == built, "in combat it waits")
+S.combat = False
+G.Fire("PLAYER_REGEN_ENABLED")
+check(len(pboxes()) == built + 1 and pwatched(ns.ProcsState("kill").container) == [415407, 999002],
+      "and builds it when the fight is over")
+S.secret = True
+S.auraIDs = lua.table_from({"Rapid Killing": 999003})
+G.Fire("UNIT_AURA", "player")
+check(not db.procs.learned[999003], "with your buffs hidden it learns nothing")
+S.secret = False
+S.auras = lua.table("Aspect of the Hawk")
+S.auraIDs = None
+G.Fire("UNIT_AURA", "player")
+
+speed, kill = ns.ProcsState("speed"), ns.ProcsState("kill")
+out = slash("procs")
+spot, ws, ks = speed.spot, speed.sample, kill.sample
+check(spot.shown and speed.sampleFrame.shown and kill.sampleFrame.shown
+      and all(g.playing for g in ws.shown.values()) and ws.assigned[1].playing and ks.assigned[1].playing,
+      "trying them shows both samples, playing")
+check(len(out) == 2 and "6150, 999001" in out[0] and "415407, 999002" in out[1], f"and says what each watches: {out}")
+spot.scripts.OnUpdate(spot, 0.1)
+first = (ws.timer.text, ks.timer.text)
+S.now = S.now + 3
+spot.scripts.OnUpdate(spot, 0.1)
+check(first == ("12", "20") and (ws.timer.text, ks.timer.text) == ("9", "17"),
+      f"the samples count down as the buffs would: {first}, {ws.timer.text}, {ks.timer.text}")
+S.now = S.now + 5
+G.RunTimers()
+check(not spot.shown and not ws.shown[1].playing, "a few seconds later they're gone")
+ns.TestProcs("kill")
+check(spot.shown and kill.sampleFrame.shown and not speed.sampleFrame.shown, "each can be tried on its own")
+S.now = S.now + 6
+G.RunTimers()
+
+db.positions.procs = lua.table("CENTER", "CENTER", 100, 40)
+ns.ToggleOptions("procs")
+pcontrols = {c.setting: c for c in page["procs"].controls.values()}
+size = pcontrols[L.OPT_PROCS_SIZE]
+size.scripts.OnValueChanged(size, 200)
+holder, place = speed.holder, speed.place
+check(db.procs.size == 200 and holder.scale == 2 and kill.holder.scale == 2 and spot.scale == 2 and place.width == 780,
+      f"size: twice as big ({place.width})")
+check(place.point[4] == 100 and place.point[5] == 40, "in the same place")
+check(spot.shown, "changing it shows the samples a moment")
+size.scripts.OnValueChanged(size, 100)
+x, y = pcontrols[L.OPT_PROCS_X], pcontrols[L.OPT_PROCS_Y]
+x.scripts.OnValueChanged(x, -120)
+y.scripts.OnValueChanged(y, -60)
+check(tuple(db.positions.procs.values()) == ("CENTER", "CENTER", -120, -60) and place.point[4] == -120 and place.point[5] == -60,
+      f"left, right, up and down from the options: {tuple(db.positions.procs.values())}")
+wind = speed.dressed
+gap = pcontrols[L.OPT_PROCS_GAP]
+gap.scripts.OnValueChanged(gap, 220)
+check({x * side for x, _, side in spots(wind)} == {220} and place.width == 550, "and the space between the wind's sides")
+check(spots(kill.dressed) == {(0, -150, 0)}, "the target stays in the middle")
+calm, burst = pcontrols[L.OPT_PROCS_CALM], pcontrols[L.OPT_PROCS_ALPHA]
+calm.scripts.OnValueChanged(calm, 15)
+burst.scripts.OnValueChanged(burst, 100)
+check(wind.calm.alpha == 0.15 and wind.strike.alpha == 1 and kill.dressed.calm.alpha == 0.15 and ws.calm.alpha == 0.15,
+      "the burst's strength and the calm's, for both")
+S.combat = True
+gap.scripts.OnValueChanged(gap, 260)
+check({x * side for x, _, side in spots(wind)} == {220} and {x * side for x, _, side in spots(ws)} == {260},
+      "in a fight the game's drawing can't be touched, the sample can")
+S.combat = False
+G.Fire("PLAYER_REGEN_ENABLED")
+check({x * side for x, _, side in spots(wind)} == {260}, "the fight over, it's fitted")
+db.positions.procs = lua.table("BOTTOMLEFT", "BOTTOMLEFT", 700, 420)
+place.GetCenter = lua.eval("function() return 700, 420 end")
+saved_center = G.UIParent.GetCenter
+G.UIParent.GetCenter = lua.eval("function() return 600, 400 end")
+place.mover.hooks.OnDragStop()
+check(tuple(db.positions.procs.values()) == ("CENTER", "CENTER", 100, 20), "dragged: kept as an offset from the middle")
+G.UIParent.GetCenter = saved_center
+switch = pcontrols[L.OPT_PROC_SPEED.replace("%s", ns.ProcName("speed"))]
+check(ns.ProcName("speed") == "Quick Shots / Quick Strikes", f"the wind's section names both: {ns.ProcName('speed')}")
+switch.checked = False
+switch.scripts.OnClick(switch)
+check(not db.procs.speed.enabled and not holder.shown and kill.holder.shown, "the wind switched off: the game shows nothing of it")
+switch.checked = True
+switch.scripts.OnClick(switch)
+check(db.procs.speed.enabled and holder.shown, "and on again")
+colours = [c for c in page["procs"].controls.values() if c.setting == L.OPT_PROC_COLOR]
+check(len(colours) == 2, "a colour for each")
+colours[0].scripts.OnClick(colours[0])
+G.COLOR_INFO.swatchFunc()
+check(tints(wind)[0] == (0, 0, 1) and tints(kill.dressed)[0] == (1, 0.38, 0.18), "the wind's colour is yours to pick")
+G.COLOR_INFO.cancelFunc()
+check(tints(wind)[0] == (0.67, 0.83, 0.45), "and back")
+timer_on = pcontrols[L.OPT_PROCS_TIMER]
+timer_on.checked = False
+timer_on.scripts.OnClick(timer_on)
+check(not wind.timer.shown and not kill.dressed.timer.shown and not ws.timer.shown, "the seconds can go")
+timer_on.checked = True
+timer_on.scripts.OnClick(timer_on)
+check(wind.timer.shown, "and come back")
+ns.SetUnlocked(True)
+check(speed.sampleFrame.shown and kill.sampleFrame.shown and place.mover.shown, "unlocked: both samples, to drag")
+ns.SetUnlocked(False)
+S.now = S.now + 6
+G.RunTimers()
+check(not spot.shown, "locked again: gone")
+win.Hide(win)
 
 print()
 print("FAILURES:" if fails else f"All good ({LOCALE}).", fails if fails else "")

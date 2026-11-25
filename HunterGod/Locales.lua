@@ -152,6 +152,23 @@ local L = {
 	SEC_PET_TOAST = "Level ups",
 	PREVIEW_HINT = "Click a sample to change its colour",
 	TRAPS_READY = "TRAPS READY",
+	-- Tracking in dungeons and raids
+	SEC_TRACKING = "Tracking",
+	OPT_TRACKING = "In dungeons and raids, remind me when I'm not tracking creatures",
+	OPT_TRACKING_WORLD = "Out in the world too",
+	TRACKING_HINT = "With herbs, minerals, Track Hidden or nothing on, it shows until you track a creature type. Click it for the list of your creature trackings and pick one; right-click leaves that dungeon or zone alone.",
+	OPT_TRACKING_TALENT = "Only with points in %s",
+	OPT_TRACKING_TEST = "See how it looks in a dungeon",
+	TRACK_TALENT = "%s: %s",
+	TRACK_TITLE = "Tracking",
+	TRACK_WRONG = "Tracking %s",
+	TRACK_NONE = "Not tracking creatures",
+	TRACK_CLICK = "Click: choose a tracking",
+	TRACK_RIGHT = "Right-click: not here (this dungeon or zone)",
+	TRACK_NO_API = "the game doesn't list its tracking to addons here.",
+	TRACK_ON = "on",
+	TRACK_OFF = "off",
+	TRACK_CREATURE = "creatures",
 	OPT_TRAPS = "TRAPS READY when your traps are back after using one in a fight",
 	OPT_FREEZE = "Time left in your %s, beside the frozen mob's nameplate",
 	TRUESHOT = "Trueshot Aura",
@@ -165,6 +182,24 @@ local L = {
 	TAB_AMMO = "Ammo",
 	TAB_PET = "Pet",
 	TAB_SWING = "Swing timers",
+	TAB_PROCS = "Procs",
+	PROCS_NAME = "Procs",
+	PROCS_WATCHING = "%s: watching spells %s.",
+	PROCS_NOT_READY = "%s isn't set up yet: the addon builds it out of combat.",
+	PROCS_REFUSED = "the game didn't take the animations for %s, so they won't show.",
+	OPT_PROC_SPEED = "Wind up both sides of you with %s",
+	OPT_PROC_KILL = "A target turning at your feet with %s",
+	OPT_PROC_COLOR = "Colour",
+	OPT_PROC_TEST = "See how it looks",
+	OPT_PROCS_SIZE = "Size (%)",
+	OPT_PROCS_X = "Left or right",
+	OPT_PROCS_Y = "Down or up",
+	OPT_PROCS_GAP = "Space between the two sides of the wind",
+	OPT_PROCS_ALPHA = "Strength as it procs (%)",
+	OPT_PROCS_CALM = "Strength afterwards, while it lasts (%)",
+	OPT_PROCS_TIMER = "The seconds they have left",
+	OPT_PROCS_TIMER_SIZE = "Size of the number",
+	PROCS_HINT = "Quick Shots and Quick Strikes come from Deadly Aspects: 30% faster shots or swings for 12 seconds. Rapid Killing makes your next Shot deal 20% more. A burst as each procs, then a calmer version while it lasts. The game itself shows them, so they work in combat too; changes made in a fight wait until it's over. You can also drag them with Move displays.",
 	-- Talent reset price, under the class trainer's window
 	SEC_RESPEC = "Class trainer",
 	OPT_RESPEC = "When the talent reset price drops, under your trainer's window",
@@ -208,7 +243,7 @@ local L = {
 	OPT_MINIMAP_PINS = "Pins on the minimap",
 	OPT_CONTINENT = "Pins on the continent map",
 	OPT_ONLY_HUNTER = "Only on hunters",
-	OPT_RANGE_ON = "Show the range to your target",
+	OPT_RANGE_ON = "Show how far away your target is",
 	MELEE_WARNING = "MELEE RANGE",
 	OPT_MELEE_WARNING = "Blinking MELEE RANGE warning when you're in melee (ranged)",
 	OPT_ONLY_COMBAT = "Only in combat",
@@ -235,8 +270,10 @@ local L = {
 	RANGE_LOADING = "(some items still loading)",
 	RANGE_YES = "yes",
 	RANGE_NO = "no",
-	OPT_SHOW_STATE = "Also write the state (in range, dead zone...)",
-	OPT_DEAD_LABEL = "Write \"%s\" while you're in the dead zone",
+	OPT_DEAD_LABEL = "Write \"%s\" and \"%s\" instead of the number",
+	OPT_UNIT_LABEL = "Show yd or m after the number",
+	REMINDERS = "Reminders",
+	CLICK_CAST = "Click: %s",
 	OPT_FAR = "Light blue and glowing in the last 5 yards of your reach",
 	OPT_STYLE = "Style",
 	STYLE = { text = "Text", icon = "Colour square", both = "Square and text" },
@@ -249,6 +286,7 @@ local L = {
 	OPT_ASPECT_ON = "Aspect warnings in combat",
 	OPT_TRAVEL = "Warn about Cheetah or Pack",
 	OPT_MISSING = "Warn when your aspect is missing",
+	OPT_MISSING_ALWAYS = "Out of combat too (not while travelling in Cheetah or the Pack, on a flight or mounted)",
 	OPT_ASPECT_TEXT = "Write the warning under the icon",
 	OPT_PREFERRED = "Your aspect at range",
 	OPT_AMMO_ON = "Low ammo warning",
@@ -269,6 +307,9 @@ local L = {
 		"  /huntergod style  - ranged or melee, and why",
 		"  /huntergod swing  - try the swing timer bars",
 		"  /huntergod respec  - when the talent reset price drops",
+		"  /huntergod tracking  - try the tracking reminder",
+		"  /huntergod trackinglist  - the tracking the game lists, and which count as creatures",
+		"  /huntergod procs  - try the proc animations, and what each watches",
 		"  /ammo arrows | bullets | both | weapon  - which ammo the map shows",
 		"  /ammo nearest  - waypoint to the nearest useful vendor",
 		"  /ammo trainers | stables | food | faction | minimap | continent | class | button  - toggle each option",
@@ -413,6 +454,22 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.SEC_PET_TOAST = "Subidas de nivel"
 	L.PREVIEW_HINT = "Haz clic en una muestra para cambiar su color"
 	L.TRAPS_READY = "TRAMPAS LISTAS"
+	L.SEC_TRACKING = "Rastreo"
+	L.OPT_TRACKING = "En mazmorras y bandas, avisarme si no rastreo criaturas"
+	L.OPT_TRACKING_WORLD = "También en el mundo abierto"
+	L.TRACKING_HINT = "Con hierbas, minerales, Rastrear ocultos o nada puesto, sale hasta que rastreas un tipo de criatura. Haz clic para ver tus rastreos de criaturas y elegir uno; con clic derecho deja en paz esa mazmorra o zona."
+	L.OPT_TRACKING_TALENT = "Solo con puntos en %s"
+	L.OPT_TRACKING_TEST = "Ver cómo sale en una mazmorra"
+	L.TRACK_TALENT = "%s: %s"
+	L.TRACK_TITLE = "Rastreo"
+	L.TRACK_WRONG = "Rastreando %s"
+	L.TRACK_NONE = "Sin rastrear criaturas"
+	L.TRACK_CLICK = "Clic: elegir rastreo"
+	L.TRACK_RIGHT = "Clic derecho: aquí no (esta mazmorra o zona)"
+	L.TRACK_NO_API = "el juego no da a los addons la lista de rastreos."
+	L.TRACK_ON = "activo"
+	L.TRACK_OFF = "apagado"
+	L.TRACK_CREATURE = "criaturas"
 	L.OPT_TRAPS = "TRAMPAS LISTAS cuando vuelvan tus trampas tras usar una en pelea"
 	L.OPT_FREEZE = "Lo que le queda a tu %s, junto a la placa del bicho congelado"
 	L.TRUESHOT = "Aura de disparo certero"
@@ -426,6 +483,24 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.TAB_AMMO = "Munición"
 	L.TAB_PET = "Mascota"
 	L.TAB_SWING = "Golpes"
+	L.TAB_PROCS = "Procs"
+	L.PROCS_NAME = "Procs"
+	L.PROCS_WATCHING = "%s: vigilando los hechizos %s."
+	L.PROCS_NOT_READY = "%s aún no está montado: el addon lo monta fuera de combate."
+	L.PROCS_REFUSED = "el juego no aceptó las animaciones de %s, así que no saldrán."
+	L.OPT_PROC_SPEED = "Viento a ambos lados con %s"
+	L.OPT_PROC_KILL = "Una mira girando a tus pies con %s"
+	L.OPT_PROC_COLOR = "Color"
+	L.OPT_PROC_TEST = "Ver cómo queda"
+	L.OPT_PROCS_SIZE = "Tamaño (%)"
+	L.OPT_PROCS_X = "Izquierda o derecha"
+	L.OPT_PROCS_Y = "Abajo o arriba"
+	L.OPT_PROCS_GAP = "Separación entre los dos lados del viento"
+	L.OPT_PROCS_ALPHA = "Intensidad al salir (%)"
+	L.OPT_PROCS_CALM = "Intensidad después, mientras dura (%)"
+	L.OPT_PROCS_TIMER = "Los segundos que les quedan"
+	L.OPT_PROCS_TIMER_SIZE = "Tamaño del número"
+	L.PROCS_HINT = "Quick Shots y Quick Strikes salen de Deadly Aspects: disparas o golpeas un 30 % más rápido durante 12 segundos. Rapid Killing hace que tu próximo disparo haga un 20 % más. Un estallido al salir cada uno y después una versión más tranquila mientras dura. Los muestra el propio juego, así que también salen en combate; lo que cambies en una pelea se aplica al acabar. También puedes arrastrarlos con Mover avisos."
 	L.SEC_RESPEC = "Instructor de clase"
 	L.OPT_RESPEC = "Cuándo baja el precio de reiniciar talentos, bajo la ventana del instructor"
 	L.RESPEC_HINT = "Blizzard no lo publica: los jugadores cuentan que sube un escalón con cada reinicio (1, 5, 10 y luego 5 g más hasta 50 g) y baja uno por cada semana desde el último. El precio que pide el instructor es el real."
@@ -468,7 +543,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.OPT_MINIMAP_PINS = "Pines en el minimapa"
 	L.OPT_CONTINENT = "Pines en el mapa del continente"
 	L.OPT_ONLY_HUNTER = "Solo con cazadores"
-	L.OPT_RANGE_ON = "Mostrar la distancia a tu objetivo"
+	L.OPT_RANGE_ON = "Mostrar a qué distancia está tu objetivo"
 	L.MELEE_WARNING = "CUERPO A CUERPO"
 	L.OPT_MELEE_WARNING = "Aviso parpadeante de CUERPO A CUERPO cuando estás a melee (a distancia)"
 	L.OPT_ONLY_COMBAT = "Solo en combate"
@@ -495,8 +570,10 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.RANGE_LOADING = "(aún cargando algunos objetos)"
 	L.RANGE_YES = "sí"
 	L.RANGE_NO = "no"
-	L.OPT_SHOW_STATE = "Escribir también el estado (a distancia, zona muerta...)"
-	L.OPT_DEAD_LABEL = "Escribir «%s» mientras estés en la zona muerta"
+	L.OPT_DEAD_LABEL = "«%s» y «%s» en lugar del número"
+	L.OPT_UNIT_LABEL = "Poner yd o m detrás del número"
+	L.REMINDERS = "Avisos"
+	L.CLICK_CAST = "Clic: %s"
 	L.OPT_FAR = "Azul claro y con brillo en las últimas 5 yardas de tu alcance"
 	L.OPT_STYLE = "Estilo"
 	L.STYLE = { text = "Texto", icon = "Cuadrado de color", both = "Cuadrado y texto" }
@@ -509,6 +586,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.OPT_ASPECT_ON = "Avisos de aspecto en combate"
 	L.OPT_TRAVEL = "Avisar de Guepardo o Manada"
 	L.OPT_MISSING = "Avisar si te falta tu aspecto"
+	L.OPT_MISSING_ALWAYS = "También fuera de combate (no viajando con Guepardo o Manada, en vuelo ni montado)"
 	L.OPT_ASPECT_TEXT = "Escribir el aviso debajo del icono"
 	L.OPT_PREFERRED = "Tu aspecto a distancia"
 	L.OPT_AMMO_ON = "Aviso de poca munición"
@@ -529,6 +607,9 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 		"  /huntergod estilo  - a distancia o cuerpo a cuerpo, y por qué",
 		"  /huntergod golpes  - probar las barras de golpe",
 		"  /huntergod talentos  - cuándo baja el precio de reiniciar talentos",
+		"  /huntergod rastreo  - probar el aviso de rastreo",
+		"  /huntergod rastreos  - los rastreos que da el juego y cuáles cuentan como criaturas",
+		"  /huntergod procs  - probar las animaciones de los procs y ver qué vigila cada una",
 		"  /municion flechas | balas | ambas | arma  - qué munición marca el mapa",
 		"  /municion cerca  - ruta al vendedor útil más cercano",
 		"  /municion instructores | establos | comida | faccion | minimapa | continente | clase | boton  - activar o quitar cada opción",

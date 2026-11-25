@@ -1,13 +1,13 @@
 # HunterGod
 
-Quality of life for hunters in **WoW Forever**. HunterGod keeps an eye on the things a hunter forgets: how far the target is, when your next shot or swing comes, which aspect you're in, how much ammo and pet food you have left, and where to buy more.
+Quality of life for hunters in **WoW Forever**. HunterGod keeps an eye on the things a hunter forgets: how far the target is, when your next shot or swing comes, which aspect and tracking you're in, when your procs are up, how much ammo and pet food you have left, and where to buy more.
 
 Everything is set up from the **minimap button** (or `/huntergod`) in one options window, with a live preview of the range number, and every display can be dragged wherever you want it.
 
 ## Range to your target
 
-- The **distance in yards or metres as one number** (for example "32 yd"), coloured by whether your target is **in Auto Shot range**, in **melee**, in the **dead zone** or **out of range**.
-- The game only tells addons whether a target is within a few fixed distances; the number is estimated from when your target crosses them and how fast. You can show the range between checks instead ("30-35 yd").
+- The **distance as one number** (for example "32", in yards or metres), coloured by whether your target is **in Auto Shot range**, in **melee**, in the **dead zone** or **out of range**. In melee it just says **Melee**, and in the dead zone **Dead zone**.
+- The game only tells addons whether a target is within a few fixed distances; the number is estimated from when your target crosses them and how fast. You can show the range between checks instead ("30-35").
 - A big, round font with a thick black outline (Fredoka, or Changa, or the game's font).
 - A blinking red **MELEE RANGE** warning when you're in melee of your target, as see-through as you like, that you can move anywhere.
 - **Survival:** with melee talents (or by choice in the options) the range turns around: green in melee, yellow "Get closer" further out, no blinking warnings, and the aspect warning asks for your melee aspect.
@@ -23,10 +23,23 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 - They replace **Blizzard's swing timers**, which HunterGod turns off while its bars are on.
 - Width, height, colours, which bars, the seconds and the icon in the **Swing timers** tab.
 
-## Aspects and traps
+## Proc animations
 
-- A pulsing icon when you're in combat with **Aspect of the Cheetah or the Pack** on.
-- Another one when your combat aspect (Hawk, Monkey, Wild or any) is **missing**. Below level 10 Monkey counts as Hawk.
+- **Quick Shots** and **Quick Strikes** (Deadly Aspects: 30% faster shots or swings for 12 seconds): **wind rushing up both sides of you**.
+- **Rapid Killing** (your next Shot deals 20% more): **a target turning on the ground at your feet**.
+- A burst as each procs, then a calmer version while it lasts, with the seconds it has left. The game itself draws them, so they work in combat too.
+- Colour, size, place and strength in the **Procs** tab. `/huntergod procs` shows them.
+
+## Reminders above your character
+
+- Your **aspect**, **Trueshot Aura** and **tracking** reminders side by side above your character, always centred whether one, two or three show. Drag the row wherever you want it.
+- A reminder when you're in combat with **Aspect of the Cheetah or the Pack** on, and when your combat aspect (Hawk, Monkey, Wild or any) is **missing**, out of combat too. Below level 10 Monkey counts as Hawk.
+- **Click them out of combat:** the aspect reminder puts on the right aspect for how you fight, and Trueshot Aura casts it. The aspect reminder also shows when you target an enemy before a pull, so you can click it.
+- **Trueshot Aura:** its icon with a countdown in its last 2 minutes, grey once it's gone. It keeps counting in combat.
+- **Tracking** in dungeons and raids: when you're tracking herbs, minerals or nothing instead of a creature type. Click it for your creature trackings and pick one. Only with points in Improved Tracking (an option).
+
+## Traps
+
 - **TRAPS READY** when your traps are back after you used one in a fight (Feign Death and trap included).
 - **Freezing Trap time left** beside the frozen mob's nameplate, counted down by the game itself (it works in combat).
 
@@ -71,6 +84,8 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 | `/huntergod style` | Ranged or melee (Survival), and why |
 | `/huntergod swing` | Shows the swing timer bars swinging |
 | `/huntergod respec` | When the talent reset price drops |
+| `/huntergod procs` | Shows the proc animations |
+| `/huntergod tracking` | Shows the tracking reminder |
 | `/ammo arrows`, `/ammo bullets`, `/ammo both`, `/ammo weapon` | Which ammo the map shows |
 | `/ammo nearest` | Waypoint to the nearest useful vendor |
 | `/ammo trainers`, `/ammo stables`, `/ammo food`, `/ammo faction`, `/ammo minimap`, `/ammo continent`, `/ammo class` | Toggle each map option |
@@ -102,8 +117,11 @@ HunterGod is licensed under the GNU GPL v3 or later.
 - **Aviso de cuerpo a cuerpo:** un CUERPO A CUERPO rojo que parpadea cuando estás a melee de tu objetivo; se puede mover.
 - **Supervivencia:** con talentos de cuerpo a cuerpo (o eligiéndolo en las opciones) la distancia se da la vuelta: verde a melee, amarillo "Acércate" más lejos, sin avisos parpadeantes, y el aviso de aspecto pide tu aspecto de melee. `/huntergod estilo` dice en qué modo estás y por qué.
 - **Aviso de agro:** AGRO 92% bajo la placa del objetivo cuando estás a punto de quitarle el bicho a tu mascota (desde el 90%, o desde donde lo pongas), y ¡TIENES EL AGRO! cuando se lo quitas. Solo con la mascota fuera o en grupo.
-- **Distancia al objetivo:** un número en yardas o metros (por ejemplo "32 yd") con letra redondeada y contorno negro, del color de a distancia, cuerpo a cuerpo, zona muerta o fuera de alcance, encima de la placa del objetivo o donde lo pongas. Eliges el estilo, el tamaño y los colores.
-- **Aspectos:** te avisa si estás en combate con el Aspecto del guepardo o de la manada, o si te falta tu aspecto de combate.
+- **Distancia al objetivo:** un número en yardas o metros (por ejemplo "32") con letra redondeada y contorno negro, del color de a distancia, cuerpo a cuerpo, zona muerta o fuera de alcance, encima de la placa del objetivo o donde lo pongas. A melee pone "Cuerpo a cuerpo" y en la zona muerta "Zona muerta". Eliges el estilo, el tamaño y los colores.
+- **Animaciones de procs:** viento subiendo a los dos lados con Quick Shots y Quick Strikes (Deadly Aspects), y una mira girando a tus pies con Rapid Killing. Las dibuja el propio juego, así que salen en combate. `/huntergod procs` las enseña.
+- **Avisos sobre el personaje:** aspecto, Aura de disparo certero y rastreo, juntos y centrados. Fuera de combate se pueden clicar: el de aspecto te pone el que toca y el de Aura de disparo certero la lanza.
+- **Aspectos:** te avisa si estás en combate con el Aspecto del guepardo o de la manada, o si te falta tu aspecto de combate, también fuera de combate.
+- **Rastreo:** en mazmorras y bandas te avisa si no rastreas un tipo de criatura (con hierbas, minerales o nada puesto); con un clic eliges uno de la lista.
 - **Trampas:** TRAMPAS LISTAS cuando vuelven tus trampas después de usar una en una pelea, y lo que le queda de Trampa congelante al bicho congelado, junto a su placa (funciona en combate).
 - **Munición:** te avisa cuando te quedan menos de 1000 flechas o balas (el número lo eliges tú) y te lo recuerda en los vendedores que la tienen.
 - **Comida de la mascota:** una barra con la comida de tus bolsas que come tu mascota; haz clic para darle de comer. Te avisa si te queda poca, y en el mapa marca los vendedores con comida que le guste.
@@ -115,4 +133,4 @@ HunterGod is licensed under the GNU GPL v3 or later.
 - **Barras de golpe:** una barra por arma (Disparo automático, mano principal y mano izquierda) con el icono del arma y los segundos hasta el siguiente golpe. Empiezan apagadas, se encienden según llega el golpe y destellan al soltarlo. A melee solo las de cuerpo a cuerpo, más lejos solo la del Disparo automático. Sustituyen a las de Blizzard.
 - **Reinicio de talentos:** bajo la ventana de tu instructor, cuándo reiniciaste por última vez, cuánto cuesta ahora y cuándo baja el precio. El juego no se lo dice a los addons, así que HunterGod apunta cada reinicio que pagas y cuenta desde ahí: un escalón más con cada reinicio (1, 5, 10 y luego 5 g más hasta 50 g) y uno menos por cada semana desde el último, según cuentan los jugadores.
 - **Mapa:** vendedores de flechas y balas, instructores de cazadores, maestros de establos y vendedores de comida para tu mascota, con casillas en la esquina del mapa del mundo para elegir qué se ve.
-- Comandos: `/huntergod` (opciones), `/huntergod desbloquear | bloquear`, `/huntergod golpes`, `/huntergod talentos`, `/municion flechas | balas | ambas | arma | instructores | establos | comida | cerca | faccion | minimapa | continente | clase | boton`.
+- Comandos: `/huntergod` (opciones), `/huntergod desbloquear | bloquear`, `/huntergod golpes`, `/huntergod talentos`, `/huntergod procs`, `/huntergod rastreo`, `/municion flechas | balas | ambas | arma | instructores | establos | comida | cerca | faccion | minimapa | continente | clase | boton`.

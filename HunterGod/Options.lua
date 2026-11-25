@@ -346,8 +346,12 @@ local function Preview(page, y, changed)
 			local font = ns.FONTS[range.font]
 			ns.UseFont(number, font, size, "THICKOUTLINE")
 			ns.UseFont(unit, font, max(floor(size * 0.5), 8), "OUTLINE")
-			number:SetText(ns.RangeNumber(s[1], s[2], s[3]))
-			unit:SetText(range.units == "meters" and L.METERS or L.YARDS)
+			-- Like the real one: the dead zone's name instead of its number, and yd or m only if you want
+			local words = range.deadLabel and (state == "melee" or state == "hit" or state == "dead")
+			ns.UseFont(number, font, words and max(floor(size * 0.7), 10) or size, "THICKOUTLINE")
+			number:SetText(words and L.RANGE[state] or ns.RangeNumber(s[1], s[2], s[3]))
+			local unitShown = range.unitLabel and not words
+			unit:SetText(unitShown and (range.units == "meters" and L.METERS or L.YARDS) or "")
 			number:SetTextColor(c.r, c.g, c.b)
 			unit:SetTextColor(c.r, c.g, c.b)
 			square:SetColorTexture(c.r, c.g, c.b)
@@ -358,7 +362,7 @@ local function Preview(page, y, changed)
 			square:SetShown(showSquare)
 			local side = floor(size * 0.7)
 			local width = (showSquare and side or 0) + (showSquare and showText and 6 or 0)
-				+ (showText and (number:GetStringWidth() or 0) + 3 + (unit:GetStringWidth() or 0) or 0)
+				+ (showText and (number:GetStringWidth() or 0) + (unitShown and 3 + (unit:GetStringWidth() or 0) or 0) or 0)
 			local x = -width / 2
 			square:SetSize(side, side)
 			square:ClearAllPoints()
@@ -456,6 +460,7 @@ local function RefreshPage(key)
 		end
 	end
 end
+ns.RefreshOptionsPage = RefreshPage
 
 local function BuildWindow()
 	window = CreateFrame("Frame", "HunterGodOptions", UIParent)
@@ -581,10 +586,19 @@ local function Build()
 	y = Preview(page, y, RangeChanged)
 	y = Section(page, y, L.SEC_DISTANCE)
 	y = Check(page, y, L.OPT_RANGE_ON, function() return range.enabled end, function(v) range.enabled = v RangeChanged() end)
+	-- Where it goes, right under the switch: "your target" in the switch isn't where it shows
+	y = Choice(page, y, L.OPT_POSITION, { { "plate", L.POSITION.plate }, { "free", L.POSITION.free } },
+		function() return range.anchor end, function(v) range.anchor = v RangeChanged() end)
+	y = Choice(page, y, L.OPT_PLATE_SIDE, {
+		{ "top", L.PLATE_SIDE.top }, { "bottom", L.PLATE_SIDE.bottom },
+		{ "left", L.PLATE_SIDE.left }, { "right", L.PLATE_SIDE.right },
+	}, function() return range.plateSide end, function(v) range.plateSide = v RangeChanged() end)
+	y = Slider(page, y, L.OPT_PLATE_GAP, -20, 60, 1, function() return range.plateGap end,
+		function(v) range.plateGap = v RangeChanged() end)
 	y = Check(page, y, L.OPT_ONLY_COMBAT, function() return range.onlyCombat end, function(v) range.onlyCombat = v RangeChanged() end)
-	y = Check(page, y, L.OPT_SHOW_STATE, function() return range.showState end, function(v) range.showState = v RangeChanged() end)
-	y = Check(page, y, format(L.OPT_DEAD_LABEL, L.RANGE.dead), function() return range.deadLabel end,
+	y = Check(page, y, format(L.OPT_DEAD_LABEL, L.RANGE.melee, L.RANGE.dead), function() return range.deadLabel end,
 		function(v) range.deadLabel = v RangeChanged() end)
+	y = Check(page, y, L.OPT_UNIT_LABEL, function() return range.unitLabel end, function(v) range.unitLabel = v RangeChanged() end)
 	y = Check(page, y, L.OPT_FAR, function() return range.farGlow end, function(v) range.farGlow = v RangeChanged() end)
 	y = Section(page, y, L.SEC_LOOK)
 	y = Choice(page, y, L.OPT_DISPLAY, { { "number", L.DISPLAY.number }, { "bracket", L.DISPLAY.bracket } },
@@ -598,14 +612,6 @@ local function Build()
 	}, function() return range.font end, function(v) range.font = v RangeChanged() end)
 	y = Choice(page, y, L.OPT_STYLE, { { "text", L.STYLE.text }, { "icon", L.STYLE.icon }, { "both", L.STYLE.both } },
 		function() return range.style end, function(v) range.style = v RangeChanged() end)
-	y = Choice(page, y, L.OPT_POSITION, { { "plate", L.POSITION.plate }, { "free", L.POSITION.free } },
-		function() return range.anchor end, function(v) range.anchor = v RangeChanged() end)
-	y = Choice(page, y, L.OPT_PLATE_SIDE, {
-		{ "top", L.PLATE_SIDE.top }, { "bottom", L.PLATE_SIDE.bottom },
-		{ "left", L.PLATE_SIDE.left }, { "right", L.PLATE_SIDE.right },
-	}, function() return range.plateSide end, function(v) range.plateSide = v RangeChanged() end)
-	y = Slider(page, y, L.OPT_PLATE_GAP, -20, 60, 1, function() return range.plateGap end,
-		function(v) range.plateGap = v RangeChanged() end)
 	y = Slider(page, y, L.OPT_SIZE, 12, 48, 1, function() return range.textSize end, function(v) range.textSize = v RangeChanged() end)
 	Done(page, y)
 
@@ -620,6 +626,8 @@ local function Build()
 	y = Check(page, y, L.OPT_ASPECT_ON, function() return aspect.enabled end, function(v) aspect.enabled = v ns.UpdateAspect() end)
 	y = Check(page, y, L.OPT_TRAVEL, function() return aspect.travel end, function(v) aspect.travel = v ns.UpdateAspect() end)
 	y = Check(page, y, L.OPT_MISSING, function() return aspect.missing end, function(v) aspect.missing = v ns.UpdateAspect() end)
+	y = Check(page, y, L.OPT_MISSING_ALWAYS, function() return aspect.missingAlways end,
+		function(v) aspect.missingAlways = v ns.UpdateAspect() end)
 	local aspects = {}
 	for _, key in ipairs({ "hawk", "monkey", "wild" }) do
 		aspects[#aspects + 1] = { key, ns.AspectName(key), icon = SpellIcon(ns.ASPECTS[key]) }
@@ -642,6 +650,19 @@ local function Build()
 	y = Check(page, y, L.OPT_TRAPS, function() return trapOptions.enabled end, function(v) trapOptions.enabled = v ns.UpdateTraps() end)
 	y = Check(page, y, format(L.OPT_FREEZE, SpellName(1499) or "Freezing Trap"), function() return trapOptions.freeze end,
 		function(v) trapOptions.freeze = v ns.UpdateFreeze() end)
+	y = Section(page, y, L.SEC_TRACKING)
+	y = Check(page, y, L.OPT_TRACKING, function() return db.tracking.enabled end,
+		function(v) db.tracking.enabled = v ns.UpdateTracking() end, SpellIcon(19883, "Interface\\Icons\\Spell_Holy_PrayerOfHealing"))
+	y = Check(page, y, format(L.OPT_TRACKING_TALENT, SpellName(24293) or "Improved Tracking"), function() return db.tracking.onlyTalent end,
+		function(v) db.tracking.onlyTalent = v ns.UpdateTracking() end, SpellIcon(24293))
+	y = Check(page, y, L.OPT_TRACKING_WORLD, function() return db.tracking.anywhere end,
+		function(v) db.tracking.anywhere = v ns.UpdateTracking() end)
+	y = Action(page, y, L.OPT_TRACKING_TEST, L.TRY, ns.TestTracking)
+	local trackingHint = Text(page, "GameFontHighlightSmall", MUTED)
+	trackingHint:SetPoint("TOPLEFT", 10, y - 6)
+	trackingHint:SetWidth(PAGE_WIDTH - 20)
+	trackingHint:SetText(L.TRACKING_HINT)
+	y = y - 44
 	y = Section(page, y, L.SEC_MELEE)
 	y = Check(page, y, L.OPT_MELEE_WARNING, function() return range.meleeWarning end, function(v) range.meleeWarning = v RangeChanged() end)
 	y = Slider(page, y, L.OPT_MELEE_ALPHA, 10, 100, 5, function() return range.meleeAlpha end, function(v) range.meleeAlpha = v RangeChanged() end)
@@ -649,6 +670,50 @@ local function Build()
 	y = Check(page, y, L.OPT_THREAT, function() return range.threat end, function(v) range.threat = v ns.UpdateThreat() end)
 	y = Slider(page, y, L.OPT_THREAT_PCT, 50, 100, 5, function() return range.threatPct end, function(v) range.threatPct = v ns.UpdateThreat() end)
 	Done(page, y)
+
+	-- Procs: wind with Quick Shots and Quick Strikes, a target at your feet with Rapid Killing. Each
+	-- change shows the sample a moment
+	local procs = db.procs
+	local function ProcsChanged(key)
+		ns.StyleProcs()
+		ns.PeekProcs(key)
+	end
+	page, y = NewPage("procs", L.TAB_PROCS, SpellIcon(6150, "Interface\\Icons\\Ability_Warrior_InnerRage"))
+	for _, key in ipairs({ "speed", "kill" }) do
+		local proc, name = procs[key], ns.ProcName(key)
+		y = Section(page, y, name)
+		y = Check(page, y, format(key == "speed" and L.OPT_PROC_SPEED or L.OPT_PROC_KILL, name),
+			function() return proc.enabled end,
+			function(v)
+				proc.enabled = v
+				ns.StyleProcs()
+				if v then ns.PeekProcs(key) end
+			end, SpellIcon(ns.PROC_SPELLS[key][1]))
+		y = Swatch(page, y, L.OPT_PROC_COLOR, proc.color, function() ProcsChanged(key) end)
+		y = Action(page, y, L.OPT_PROC_TEST, L.TRY, function() ns.TestProcs(key) end)
+	end
+	y = Section(page, y, L.SEC_LOOK)
+	y = Slider(page, y, L.OPT_PROCS_SIZE, 50, 200, 10, function() return procs.size end,
+		function(v) ns.SetProcsSize(v) ns.PeekProcs() end)
+	y = Slider(page, y, L.OPT_PROCS_X, -600, 600, 5, function() return (ns.ProcsOffset()) end,
+		function(v) ns.MoveProcs(v, select(2, ns.ProcsOffset())) ns.PeekProcs() end)
+	y = Slider(page, y, L.OPT_PROCS_Y, -400, 400, 5, function() return select(2, ns.ProcsOffset()) end,
+		function(v) ns.MoveProcs((ns.ProcsOffset()), v) ns.PeekProcs() end)
+	y = Slider(page, y, L.OPT_PROCS_GAP, 60, 400, 5, function() return procs.gap end,
+		function(v) procs.gap = v ProcsChanged("speed") end)
+	y = Slider(page, y, L.OPT_PROCS_ALPHA, 20, 100, 5, function() return procs.alpha end,
+		function(v) procs.alpha = v ProcsChanged() end)
+	y = Slider(page, y, L.OPT_PROCS_CALM, 0, 100, 5, function() return procs.calm end,
+		function(v) procs.calm = v ProcsChanged() end)
+	y = Check(page, y, L.OPT_PROCS_TIMER, function() return procs.timer end,
+		function(v) procs.timer = v ProcsChanged() end)
+	y = Slider(page, y, L.OPT_PROCS_TIMER_SIZE, 12, 40, 1, function() return procs.timerSize end,
+		function(v) procs.timerSize = v ProcsChanged() end)
+	local procsHint = Text(page, "GameFontHighlightSmall", MUTED)
+	procsHint:SetPoint("TOPLEFT", 10, y - 6)
+	procsHint:SetWidth(PAGE_WIDTH - 20)
+	procsHint:SetText(L.PROCS_HINT)
+	Done(page, y - 16 - ceil(procsHint:GetStringHeight() or 60))
 
 	-- Swing timers
 	local swing = db.swing

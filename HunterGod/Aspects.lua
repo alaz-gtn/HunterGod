@@ -82,28 +82,61 @@ local function Wanted()
 	if (preferred == "hawk" or preferred == "beast") and Knows(ns.ASPECTS.monkey) then return "monkey" end
 end
 
+-- The aspect a click puts on: the one for your style (Survival fights in melee), or for "any"
+-- the usual one for it
+local function ToCast()
+	local want = Wanted()
+	if want and want ~= "any" then return want end
+	local usual = ns.IsMelee() and "beast" or "hawk"
+	if Knows(ns.ASPECTS[usual]) then return usual end
+	if Knows(ns.ASPECTS.monkey) then return "monkey" end
+end
+
 local function Warn(key, text, missing)
 	frame.icon:SetTexture(SpellIcon(ns.ASPECTS[key]))
 	frame.icon:SetDesaturated(missing or false)
 	-- The icon says it alone: the words underneath only if you want them
 	frame.text:SetText(text)
 	frame.text:SetShown(db.text)
+	frame.cast = ToCast()
 	frame:Show()
 	if not frame.pulse:IsPlaying() then frame.pulse:Play() end
+	ns.LayoutReminders()
+end
+
+local function Clear()
+	frame.cast = nil
+	frame.pulse:Stop()
+	frame:Hide()
+	ns.LayoutReminders()
+end
+
+-- About to pull: an enemy you can attack targeted, out of combat. Then the warning shows too, and
+-- a click fixes it, as the game lets that click work only out of a fight
+local function AboutToPull()
+	if not (UnitExists("target") and UnitCanAttack("player", "target")) then return false end
+	local dead = UnitIsDeadOrGhost and UnitIsDeadOrGhost("target")
+	return not (dead and not ns.IsSecret(dead))
+end
+
+-- Free to put an aspect on: not on a flight, not mounted (casting would get you off) and alive
+local function Free()
+	if UnitOnTaxi and UnitOnTaxi("player") then return false end
+	if IsMounted and IsMounted() then return false end
+	local dead = UnitIsDeadOrGhost and UnitIsDeadOrGhost("player")
+	return not (dead and not ns.IsSecret(dead))
 end
 
 function ns.UpdateAspect()
-	if not db.enabled or not ns.IsHunter() then
-		frame:Hide()
-		return
-	end
+	if not db.enabled or not ns.IsHunter() then return Clear() end
 	if ns.unlocked then
 		Warn("cheetah", format(L.ASPECT_TRAVEL, ns.AspectName("cheetah")))
 		return
 	end
-	if not inCombat then
-		frame:Hide()
-		return
+	if not inCombat and not AboutToPull() then
+		-- Out of a fight a missing aspect shows anyway (after dying, say). Travelling in Cheetah or
+		-- the Pack is what they're for: those wait for an enemy or a fight
+		if not (db.missingAlways and Free()) or (current and TRAVEL[current]) then return Clear() end
 	end
 	if current and TRAVEL[current] and db.travel then
 		Warn(current, format(L.ASPECT_TRAVEL, ns.AspectName(current)))
@@ -118,7 +151,7 @@ function ns.UpdateAspect()
 		Warn(want, format(L.ASPECT_MISSING, ns.AspectName(want)), true)
 		return
 	end
-	frame:Hide()
+	Clear()
 end
 
 -- For the tests: what the addon thinks is active
@@ -127,24 +160,14 @@ function ns.CurrentAspect()
 end
 
 frame = CreateFrame("Frame", "HunterGodAspect", UIParent)
-frame:SetSize(40, 40)
 frame:Hide()
-local border = frame:CreateTexture(nil, "BORDER")
-border:SetPoint("TOPLEFT", -2, 2)
-border:SetPoint("BOTTOMRIGHT", 2, -2)
-border:SetColorTexture(0.9, 0.1, 0.1, 0.9)
-frame.icon = frame:CreateTexture(nil, "ARTWORK")
-frame.icon:SetAllPoints()
-frame.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+ns.StyleReminder(frame)
 frame.text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 frame.text:SetPoint("TOP", frame, "BOTTOM", 0, -4)
 frame.text:SetTextColor(1, 0.3, 0.2)
-frame.pulse = frame:CreateAnimationGroup()
-frame.pulse:SetLooping("BOUNCE")
-local fade = frame.pulse:CreateAnimation("Alpha")
-fade:SetFromAlpha(1)
-fade:SetToAlpha(0.45)
-fade:SetDuration(0.6)
+ns.AddReminder("aspect", frame,
+	function() return frame.cast and Knows(ns.ASPECTS[frame.cast]) and ns.AspectName(frame.cast) end,
+	function(tip) tip:AddLine(frame.text:GetText() or "") end)
 
 -- Trueshot Aura lasts 30 minutes: a reminder in its last two, and once it's gone. Forever hides
 -- your buffs in combat, so its end comes from when you last saw it on you or cast it
@@ -197,36 +220,37 @@ function ns.UpdateTrueshot()
 		if left > TRUESHOT_WARN then left = nil end
 	end
 	if not left then
-		trueshot.pulse:Stop()
-		trueshot:Hide()
+		if trueshot:IsShown() then
+			trueshot.pulse:Stop()
+			trueshot:Hide()
+			ns.LayoutReminders()
+		end
 		return
 	end
 	-- Grey once it's gone
 	trueshot.icon:SetDesaturated(left == 0)
 	trueshot.text:SetText(left > 0 and format("%d:%02d", floor(left / 60), floor(left % 60)) or "")
-	trueshot:Show()
+	if not trueshot:IsShown() then
+		trueshot:Show()
+		ns.LayoutReminders()
+	end
 	if not trueshot.pulse:IsPlaying() then trueshot.pulse:Play() end
 end
 
 trueshot = CreateFrame("Frame", "HunterGodTrueshot", UIParent)
-trueshot:SetSize(36, 36)
 trueshot:Hide()
-local trueshotBorder = trueshot:CreateTexture(nil, "BORDER")
-trueshotBorder:SetPoint("TOPLEFT", -2, 2)
-trueshotBorder:SetPoint("BOTTOMRIGHT", 2, -2)
-trueshotBorder:SetColorTexture(1, 0.75, 0.1, 0.9)
-trueshot.icon = trueshot:CreateTexture(nil, "ARTWORK")
-trueshot.icon:SetAllPoints()
-trueshot.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+ns.StyleReminder(trueshot)
 trueshot.text = trueshot:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-trueshot.text:SetPoint("TOP", trueshot, "BOTTOM", 0, -3)
+trueshot.text:SetPoint("TOP", trueshot, "BOTTOM", 0, -4)
 trueshot.text:SetTextColor(1, 0.82, 0.2)
-trueshot.pulse = trueshot:CreateAnimationGroup()
-trueshot.pulse:SetLooping("BOUNCE")
-local trueshotFade = trueshot.pulse:CreateAnimation("Alpha")
-trueshotFade:SetFromAlpha(1)
-trueshotFade:SetToAlpha(0.5)
-trueshotFade:SetDuration(0.8)
+-- A click casts it again, out of combat
+ns.AddReminder("trueshot", trueshot,
+	function() return trueshotKnown and trueshotName end,
+	function(tip)
+		tip:AddLine(trueshotName or L.TRUESHOT)
+		local left = trueshot.text:GetText()
+		if left and left ~= "" then tip:AddLine(left, 1, 1, 1) end
+	end)
 
 -- TRAPS READY when the traps are back after one was used in a fight. Traps share their
 -- cooldown; laying one after Feign Death (out of combat for a moment) still counts.
@@ -318,7 +342,6 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 	if event == "PLAYER_LOGIN" then
 		db = ns.db.aspect
 		trapsDB = ns.db.traps
-		ns.Movable(frame, "aspect", { "CENTER", "CENTER", 0, 120 }, L.TAB_ASPECTS)
 		traps.text:SetText(L.TRAPS_READY)
 		ns.UseFont(traps.text, ns.FONTS and ns.FONTS[ns.db.range.font], 24, "THICKOUTLINE")
 		traps:SetWidth(traps.text:GetStringWidth() + 44)
@@ -327,7 +350,6 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		trueshot.icon:SetTexture(SpellIcon(TRUESHOT[1]))
 		-- A fine countdown under the icon: the narrow font with a thin edge
 		ns.UseFont(trueshot.text, ns.THIN_FONT, 17, "OUTLINE")
-		ns.Movable(trueshot, "trueshot", { "CENTER", "CENTER", 160, 120 }, trueshotName or L.TRUESHOT)
 		table.insert(ns.refreshers, ns.UpdateTrueshot)
 		-- Its countdown ticks on its own
 		local clock = CreateFrame("Frame")
@@ -349,6 +371,19 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		self:RegisterEvent("PLAYER_REGEN_DISABLED")
 		self:RegisterEvent("PLAYER_REGEN_ENABLED")
 		self:RegisterEvent("SPELLS_CHANGED")
+		self:RegisterEvent("PLAYER_TARGET_CHANGED")
+		-- Mounting, a flight, dying and coming back: when a missing aspect can be put on
+		for _, name in ipairs({ "PLAYER_MOUNT_DISPLAY_CHANGED", "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED",
+			"PLAYER_DEAD", "PLAYER_ALIVE", "PLAYER_UNGHOST" }) do
+			pcall(self.RegisterEvent, self, name)
+		end
+		ns.UpdateAspect()
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		if not inCombat then Scan() end
+		ns.UpdateAspect()
+	elseif event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "PLAYER_CONTROL_LOST" or event == "PLAYER_CONTROL_GAINED"
+		or event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" then
+		if not inCombat then Scan() end
 		ns.UpdateAspect()
 	elseif event == "UNIT_AURA" then
 		Scan()

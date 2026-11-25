@@ -32,8 +32,8 @@ local defaults = {
 		units = "yards", -- yards | meters
 		display = "number", -- number | bracket
 		font = "fredoka", -- fredoka | changa | game
-		showState = false,
-		deadLabel = true, -- "Dead zone" under the number while you're in it, even with the state off
+		deadLabel = true, -- "Melee" and "Dead zone" instead of the number
+		unitLabel = false, -- yd or m after the number
 		farGlow = true, -- light blue and glowing in the last 5 yards of your reach
 		textSize = 26,
 		colors = {
@@ -47,8 +47,12 @@ local defaults = {
 			approach = { r = 1, g = 0.82, b = 0 },
 		},
 	},
-	aspect = { enabled = true, travel = true, missing = true, preferred = "hawk", melee = "beast", text = false, trueshot = true },
+	-- missingAlways: a missing aspect out of combat too (travelling in Cheetah or the Pack is fine then)
+	aspect = { enabled = true, travel = true, missing = true, missingAlways = true, preferred = "hawk", melee = "beast", text = false, trueshot = true },
 	traps = { enabled = true, freeze = true },
+	-- In dungeons and raids, a reminder when you aren't tracking creatures. last: the one you had on last
+	-- onlyTalent: only with points in Improved Tracking. anywhere: out in the world too, not only in dungeons
+	tracking = { enabled = true, onlyTalent = true, anywhere = false },
 	lowAmmo = { enabled = true, threshold = 1000, merchant = true },
 	-- A bar for each weapon's swing: Auto Shot, main hand, off hand
 	swing = {
@@ -69,6 +73,20 @@ local defaults = {
 	petStatus = { happy = true, health = true, healthPct = 40, wrath = true },
 	petToast = { level = true, training = true, sound = true },
 	minimapButton = { hide = false, angle = 215 },
+	-- The procs, drawn around you: wind up both sides with Quick Shots and Quick Strikes, a target at
+	-- your feet with Rapid Killing
+	procs = {
+		size = 60, -- %: around your character, not over half the screen
+		gap = 140, -- from the middle to each side of the wind
+		alpha = 85, -- the burst as it procs, %
+		calm = 35, -- afterwards, while it lasts: fainter, %
+		timer = true, -- the seconds they have left
+		timerSize = 20,
+		speed = { enabled = true, color = { r = 0.67, g = 0.83, b = 0.45 } }, -- the hunter's green
+		kill = { enabled = true, color = { r = 1, g = 0.38, b = 0.18 } },
+		learned = {}, -- other spells the addon saw by those names: which proc each is
+		ignored = {}, -- ones it saw always on: a passive, not the proc
+	},
 	-- At the class trainer: when the talent reset price drops. The trainer options seen to lead to the reset
 	respec = { enabled = true, options = {} },
 	positions = {},

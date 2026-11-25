@@ -1,3 +1,12 @@
+# 1.5.0
+
+- **Proc animations**: wind rushing up both sides of you while **Quick Shots** or **Quick Strikes** is up (Deadly Aspects: 30% faster shots or swings for 12 seconds), and a target turning on the ground at your feet with **Rapid Killing** (your next Shot deals 20% more). A burst as each procs, then a calmer version while it lasts, with the seconds it has left. The game itself draws them, so they work in combat too. Colour, size, place and strength in the new Procs tab; `/huntergod procs` shows them.
+- **Tracking reminder** in dungeons and raids: when you're tracking herbs, minerals or nothing instead of a creature type. Click it for your creature trackings as bars and pick one; right-click leaves that dungeon alone. Only with points in Improved Tracking (an option), and out in the world too if you want. `/huntergod tracking` shows it anywhere.
+- **The reminders in one row**: aspect, Trueshot Aura and tracking side by side above your character, always centred whether one, two or three show, the same size with a thin black edge, and still (no blinking). They move together: if you had moved them, place the row again with Move displays.
+- **Click them out of combat**: Trueshot Aura casts it, and the aspect reminder puts on the right aspect for how you fight (Hawk, or Beast in Survival).
+- A missing aspect now shows out of combat too (not while travelling in Cheetah or the Pack, on a flight, mounted or dead), and before a pull when you target an enemy, so you can click it.
+- **Range**: only "Melee", "Dead zone" or the number. Its colour says the rest, so "In range" and the other states under it are gone, and yd or m after the number is off by default (an option). The switch and where the range goes are now at the top of the Range tab.
+
 # 1.4.0
 
 - **Talent reset price at your trainer**: a note under your hunter trainer's window says when you last reset your talents, what it costs now, and when the price drops and to what. It shows under the trainer's price too, so you can see whether waiting pays. The game doesn't tell addons when you last reset or when the price drops, so HunterGod writes down each reset you pay for from now on and counts from there: a step up with each reset (1, 5, 10, then 5 g more up to 50 g) and a step down for each week since the last one, as players report it. The price the trainer asks always wins. Legacy talents get their own lines. `/huntergod respec` says it anywhere.
