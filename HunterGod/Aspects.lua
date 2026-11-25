@@ -325,7 +325,8 @@ events:SetScript("OnEvent", function(self, event, unit, _, spellID)
 		ns.Movable(traps, "traps", { "CENTER", "CENTER", 0, -40 }, L.TRAPS_READY)
 		LearnTrueshot()
 		trueshot.icon:SetTexture(SpellIcon(TRUESHOT[1]))
-		ns.UseFont(trueshot.text, ns.FONTS and ns.FONTS[ns.db.range.font], 16, "THICKOUTLINE")
+		-- A fine countdown under the icon: the narrow font with a thin edge
+		ns.UseFont(trueshot.text, ns.THIN_FONT, 17, "OUTLINE")
 		ns.Movable(trueshot, "trueshot", { "CENTER", "CENTER", 160, 120 }, trueshotName or L.TRUESHOT)
 		table.insert(ns.refreshers, ns.UpdateTrueshot)
 		-- Its countdown ticks on its own

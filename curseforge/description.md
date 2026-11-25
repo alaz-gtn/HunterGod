@@ -55,6 +55,12 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 - `/ammo nearest` sets a waypoint to the closest vendor that is still useful at your level.
 - **Learns as you play:** open a merchant that sells ammo and isn't on the map, and it gets added. This is how the new Forever zones fill in.
 
+## At your class trainer
+
+- A note under your trainer's window: when you **last reset your talents**, what it **costs now** and **when the price drops**, and to what. It shows under the trainer's price too.
+- The game doesn't tell addons when you last reset or when the price drops, so HunterGod writes down each reset you pay for from now on and counts from there: a step up with each reset (1, 5, 10, then 5 g more up to 50 g) and a step down for each week since the last one, as players report it. The price the trainer asks always wins.
+- Class and legacy talents, each with its own price. `/huntergod respec` says it anywhere.
+
 ## Commands
 
 | Command | What it does |
@@ -64,6 +70,7 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 | `/huntergod meters`, `/huntergod yards` | The range in metres or yards |
 | `/huntergod style` | Ranged or melee (Survival), and why |
 | `/huntergod swing` | Shows the swing timer bars swinging |
+| `/huntergod respec` | When the talent reset price drops |
 | `/ammo arrows`, `/ammo bullets`, `/ammo both`, `/ammo weapon` | Which ammo the map shows |
 | `/ammo nearest` | Waypoint to the nearest useful vendor |
 | `/ammo trainers`, `/ammo stables`, `/ammo food`, `/ammo faction`, `/ammo minimap`, `/ammo continent`, `/ammo class` | Toggle each map option |
@@ -105,5 +112,7 @@ HunterGod is licensed under the GNU GPL v3 or later.
 - **NO ESTÁ CONTENTA** parpadea sobre el retrato de tu mascota si no está contenta, y **¡CURA A TU MASCOTA!** sale cuando le baja la vida del porcentaje que elijas.
 - **Cólera de las bestias** en el retrato de tu mascota, con los segundos que le quedan.
 - **Subidas de nivel:** un aviso con el retrato de tu mascota cuando sube de nivel o gana puntos de entrenamiento, y cuántos tiene para gastar.
+- **Barras de golpe:** una barra por arma (Disparo automático, mano principal y mano izquierda) con el icono del arma y los segundos hasta el siguiente golpe. Empiezan apagadas, se encienden según llega el golpe y destellan al soltarlo. A melee solo las de cuerpo a cuerpo, más lejos solo la del Disparo automático. Sustituyen a las de Blizzard.
+- **Reinicio de talentos:** bajo la ventana de tu instructor, cuándo reiniciaste por última vez, cuánto cuesta ahora y cuándo baja el precio. El juego no se lo dice a los addons, así que HunterGod apunta cada reinicio que pagas y cuenta desde ahí: un escalón más con cada reinicio (1, 5, 10 y luego 5 g más hasta 50 g) y uno menos por cada semana desde el último, según cuentan los jugadores.
 - **Mapa:** vendedores de flechas y balas, instructores de cazadores, maestros de establos y vendedores de comida para tu mascota, con casillas en la esquina del mapa del mundo para elegir qué se ve.
-- Comandos: `/huntergod` (opciones), `/huntergod desbloquear | bloquear`, `/municion flechas | balas | ambas | arma | instructores | establos | comida | cerca | faccion | minimapa | continente | clase | boton`.
+- Comandos: `/huntergod` (opciones), `/huntergod desbloquear | bloquear`, `/huntergod golpes`, `/huntergod talentos`, `/municion flechas | balas | ambas | arma | instructores | establos | comida | cerca | faccion | minimapa | continente | clase | boton`.

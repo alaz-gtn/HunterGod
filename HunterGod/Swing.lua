@@ -16,7 +16,7 @@ local FLASH = 0.18 -- the flash when a swing goes
 local WINDUP = 0.5 -- Auto Shot's last half second, when moving holds the shot back
 local GAP = 3 -- between rows
 local DEFAULT_POINT = { "CENTER", "CENTER", 0, -100 }
-local THIN_FONT = "Fonts\\ARIALN.TTF"
+local THIN_FONT = ns.THIN_FONT
 -- For samples, when the game doesn't say how fast your weapons are
 local SAMPLE_SPEED = { [RANGED] = 2.8, [MAIN] = 2.6, [OFF] = 1.9 }
 local TEST_SECONDS = 6

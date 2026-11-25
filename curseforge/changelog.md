@@ -1,3 +1,8 @@
+# 1.4.0
+
+- **Talent reset price at your trainer**: a note under your hunter trainer's window says when you last reset your talents, what it costs now, and when the price drops and to what. It shows under the trainer's price too, so you can see whether waiting pays. The game doesn't tell addons when you last reset or when the price drops, so HunterGod writes down each reset you pay for from now on and counts from there: a step up with each reset (1, 5, 10, then 5 g more up to 50 g) and a step down for each week since the last one, as players report it. The price the trainer asks always wins. Legacy talents get their own lines. `/huntergod respec` says it anywhere.
+- The Trueshot Aura countdown under its icon is finer: the game's narrow font with a thin edge.
+
 # 1.3.0
 
 - **Swing timers**: a bar for each weapon (Auto Shot, main hand and off hand), stacked, with your weapon's icon on its left and the seconds to the next swing. Each bar starts dim, lights up as the swing comes and flashes when it goes. Forever tells the game every swing, so they work in combat too.

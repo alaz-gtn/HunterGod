@@ -291,6 +291,22 @@ TOOLTIP = {}
 GameTooltip = { SetOwner = function() TOOLTIP = {} end, AddLine = function(_, s) table.insert(TOOLTIP, s) end, Show = function() end, SetBagItem = function() end }
 GameTooltip_Hide = function() end
 SlashCmdList = {}
+-- Talent reset: the trainer's options, the game's price dialog, the gold and the server's clock
+GOSSIP_OPTIONS = {}
+C_GossipInfo = { GetOptions = function() return GOSSIP_OPTIONS end, SelectOption = function() end }
+GossipFrame = CreateFrame("Frame")
+POPUPS = {}
+StaticPopup_FindVisible = function(which) return POPUPS[which] end
+GetMoney = function() return G.money or 0 end
+GetServerTime = function() return G.server or 0 end
+date = os.date
+ConfirmTalentWipe = function() end
+hooksecurefunc = function(a, b, c)
+  local t, key, fn = _G, a, b
+  if type(a) == "table" then t, key, fn = a, b, c end
+  local orig = t[key]
+  t[key] = function(...) local r = { orig(...) } fn(...) return unpack(r) end
+end
 
 -- Mocked HereBeDragons: records the pins per map
 HBD_PINS_WORLDMAP_SHOW_PARENT, HBD_PINS_WORLDMAP_SHOW_CONTINENT = 1, 2
@@ -1768,6 +1784,100 @@ check(G.CountWorld()[0] == 0 and not G.Panel().shown, "nothing on the map for a 
 check(not rng.shown and not asp.shown and not ammo.shown and not bar.shown, "and no hunter displays")
 slash("class")
 check(G.CountWorld()[0] > 0 and G.Panel().shown, "class toggle: map shown for any class")
+
+# ---------------------------------------------------------------- Talent reset price at the trainer
+S["class"] = "HUNTER"
+rs = ns.RespecState()
+rnote, recs = rs.note, rs.records
+DAY = 86400
+T0 = 1795600000
+S.server, S.money = T0, 500000
+popup = G.CreateFrame("Frame")
+TRAINER = lua.eval('{ { gossipOptionID = 101, name = "I am here for training." }, { gossipOptionID = 102, name = "I wish to unlearn my class or legacy talents." } }')
+G.GOSSIP_OPTIONS = TRAINER
+G.Fire("GOSSIP_SHOW")
+check(rnote.shown and G.Same(rnote.anchor, G.GossipFrame) and rnote.point[1] == "TOPLEFT", "your class trainer: a note under its window")
+check((L.RESPEC_UNKNOWN % "HunterGod") in rnote.body.text and rnote.title.text == L.RESPEC_TITLE, "no reset written down yet: it says so")
+G.Fire("GOSSIP_CLOSED")
+check(not rnote.shown, "it goes with the window")
+G.GOSSIP_OPTIONS = lua.eval('{ { gossipOptionID = 201, name = "I wish to untrain my pet." }, { gossipOptionID = 202, name = "I am here for training." } }')
+G.Fire("GOSSIP_SHOW")
+check(not rnote.shown, "any other trainer: nothing")
+# Asking for the reset: the trainer's price, and the note under the game's dialog
+G.GOSSIP_OPTIONS = TRAINER
+G.C_GossipInfo.SelectOption(102)
+G.POPUPS.CONFIRM_TALENT_WIPE = popup
+G.Fire("CONFIRM_TALENT_WIPE", 10000, 0)
+G.RunTimers()
+check(rnote.shown and G.Same(rnote.anchor, popup) and rnote.point[1] == "TOP", "the price dialog: the note under it")
+check((L.RESPEC_ASKED % ("1 g", L.RESPEC_MINUTES % 1)) in rnote.body.text, f"what the trainer asked: {rnote.body.text}")
+check(db.respec.options[102], "the option that led there is learnt")
+# Not enough gold: the game says no, and nothing is written down
+G.ConfirmTalentWipe()
+S.now = S.now + 11
+G.RunTimers()
+G.Fire("PLAYER_MONEY")
+check(not recs["0"].reset and not ns.RespecState().pending, "accepted but no gold went: not a reset")
+# Paid
+G.Fire("CONFIRM_TALENT_WIPE", 10000, 0)
+G.RunTimers()
+G.ConfirmTalentWipe()
+S.money = 490000
+G.Fire("PLAYER_MONEY")
+r = recs["0"]
+check(r.reset == T0 and r.paid == 10000 and r.cost is None, "paid: the reset written down, with its price")
+popup.shown = False
+rnote.scripts.OnUpdate(rnote, 0.3)
+check(not rnote.shown, "the dialog gone: the note too")
+# A day on, at the trainer: a step up, and back down in six days
+S.server = T0 + DAY
+G.GOSSIP_OPTIONS = lua.eval('{ { gossipOptionID = 102, name = "Ich möchte meine Fähigkeiten verlernen." } }')
+G.Fire("GOSSIP_SHOW")
+drop = T0 + 7 * DAY
+when = L.RESPEC_ON % (L.RESPEC_WEEKDAYS[G.date("*t", drop).wday], G.date("%H:%M", drop))
+body = rnote.body.text
+check(rnote.shown, "an option it learnt, in another language: still your trainer")
+check((L.RESPEC_LAST % (L.RESPEC_HOURS % 24, "1 g")) in body and (L.RESPEC_NOW_ABOUT % "5 g") in body
+      and (L.RESPEC_DROPS % ("1 g", when, L.RESPEC_DAYS % 6)) in body, f"a day on: about 5 g, down to 1 g in six days: {body}")
+S.server = T0 + 7 * DAY - 3600
+G.Fire("GOSSIP_SHOW")
+check((L.RESPEC_TODAY % G.date("%H:%M", drop)) in rnote.body.text or (L.RESPEC_TOMORROW % G.date("%H:%M", drop)) in rnote.body.text,
+      "the day it drops: today (or tomorrow, past midnight)")
+
+
+def price(paid, days, seen=None, cost=None):
+    rec = lua.table(reset=T0, paid=paid * 10000)
+    if seen is not None:
+        rec.seen, rec.cost = T0 + seen * DAY, cost * 10000
+    out = tuple(ns.RespecPrice(rec, T0 + days * DAY)) + (None, None)
+    return out[0] / 10000, out[1], out[2], out[3] and out[3] / 10000
+
+
+check(price(10, 1) == (15, None, T0 + 7 * DAY, 10), f"paid 10 g: 15 g that week, then 10 g: {price(10, 1)}")
+check(price(10, 8) == (10, None, T0 + 14 * DAY, 5), "a week on: 10 g, then 5 g")
+check(price(10, 15) == (5, None, T0 + 21 * DAY, 1), "two weeks: 5 g, then 1 g")
+check(price(10, 22)[:3] == (1, None, None), "three weeks: 1 g, the lowest")
+check(price(50, 1) == (50, None, T0 + 7 * DAY, 45) and price(1, 1)[0] == 5, "50 g at most; after the first, 5 g")
+check(price(10, 3, 2, 20)[:2] == (20, True), "the trainer asked more than worked out: its price counts")
+check(price(10, 8, 2, 20)[:2] == (15, None), "and a week later, a step under it")
+# The legacy tree's reset, kept apart
+G.Fire("CONFIRM_TALENT_WIPE", 100000, 1)
+G.RunTimers()
+G.Fire("GOSSIP_SHOW")
+body = rnote.body.text
+check(L.RESPEC_CLASS in body and L.RESPEC_LEGACY in body and body.index(L.RESPEC_CLASS) < body.index(L.RESPEC_LEGACY),
+      "class talents and the legacy tree, each with its own price")
+out = slash("talentos" if es else "respec")
+check(any(L.RESPEC_TITLE in line for line in out) and any(L.RESPEC_LEGACY in line for line in out), "and in the chat")
+db.respec.enabled = False
+G.Fire("GOSSIP_CLOSED")
+G.Fire("GOSSIP_SHOW")
+check(not rnote.shown, "the option off: no note")
+db.respec.enabled = True
+S["class"] = "MAGE"
+G.Fire("GOSSIP_SHOW")
+check(not rnote.shown, "another class: not this addon's trainer")
+S["class"] = "HUNTER"
 
 print()
 print("FAILURES:" if fails else f"All good ({LOCALE}).", fails if fails else "")

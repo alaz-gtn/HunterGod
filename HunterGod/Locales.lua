@@ -165,6 +165,27 @@ local L = {
 	TAB_AMMO = "Ammo",
 	TAB_PET = "Pet",
 	TAB_SWING = "Swing timers",
+	-- Talent reset price, under the class trainer's window
+	SEC_RESPEC = "Class trainer",
+	OPT_RESPEC = "When the talent reset price drops, under your trainer's window",
+	RESPEC_HINT = "Blizzard doesn't publish it: players report a step up with each reset (1, 5, 10, then 5 g more up to 50 g) and a step down for each week since the last one. The price the trainer asks is the real one.",
+	RESPEC_TITLE = "Talent reset",
+	RESPEC_CLASS = "Class talents",
+	RESPEC_LEGACY = "Legacy talents",
+	RESPEC_LAST = "Last one %s ago, for %s",
+	RESPEC_NOW = "Now: %s",
+	RESPEC_NOW_ABOUT = "Now: about %s",
+	RESPEC_DROPS = "Drops to %s %s (in %s)",
+	RESPEC_LOWEST = "It's at its lowest",
+	RESPEC_ASKED = "The trainer asked %s, %s ago",
+	RESPEC_UNKNOWN = "%s doesn't know when you last reset yet: it writes it down the next time you pay for one.",
+	RESPEC_TODAY = "today at %s",
+	RESPEC_TOMORROW = "tomorrow at %s",
+	RESPEC_ON = "on %s at %s",
+	RESPEC_WEEKDAYS = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" },
+	RESPEC_MINUTES = "%d min",
+	RESPEC_HOURS = "%d h",
+	RESPEC_DAYS = "%d days",
 	SWING_NAME = "Swing timers",
 	SEC_SWING = "A bar for each weapon",
 	OPT_SWING_ON = "Swing timer bars",
@@ -247,6 +268,7 @@ local L = {
 		"  /huntergod dr  - log what the game says about diminishing returns",
 		"  /huntergod style  - ranged or melee, and why",
 		"  /huntergod swing  - try the swing timer bars",
+		"  /huntergod respec  - when the talent reset price drops",
 		"  /ammo arrows | bullets | both | weapon  - which ammo the map shows",
 		"  /ammo nearest  - waypoint to the nearest useful vendor",
 		"  /ammo trainers | stables | food | faction | minimap | continent | class | button  - toggle each option",
@@ -404,6 +426,26 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.TAB_AMMO = "Munición"
 	L.TAB_PET = "Mascota"
 	L.TAB_SWING = "Golpes"
+	L.SEC_RESPEC = "Instructor de clase"
+	L.OPT_RESPEC = "Cuándo baja el precio de reiniciar talentos, bajo la ventana del instructor"
+	L.RESPEC_HINT = "Blizzard no lo publica: los jugadores cuentan que sube un escalón con cada reinicio (1, 5, 10 y luego 5 g más hasta 50 g) y baja uno por cada semana desde el último. El precio que pide el instructor es el real."
+	L.RESPEC_TITLE = "Reinicio de talentos"
+	L.RESPEC_CLASS = "Talentos de clase"
+	L.RESPEC_LEGACY = "Talentos de legado"
+	L.RESPEC_LAST = "El último, hace %s, por %s"
+	L.RESPEC_NOW = "Ahora: %s"
+	L.RESPEC_NOW_ABOUT = "Ahora: unos %s"
+	L.RESPEC_DROPS = "Baja a %s %s (en %s)"
+	L.RESPEC_LOWEST = "Ya está en lo más bajo"
+	L.RESPEC_ASKED = "El instructor te pidió %s hace %s"
+	L.RESPEC_UNKNOWN = "%s aún no sabe cuándo reiniciaste por última vez: lo apunta la próxima vez que pagues uno."
+	L.RESPEC_TODAY = "hoy a las %s"
+	L.RESPEC_TOMORROW = "mañana a las %s"
+	L.RESPEC_ON = "el %s a las %s"
+	L.RESPEC_WEEKDAYS = { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" }
+	L.RESPEC_MINUTES = "%d min"
+	L.RESPEC_HOURS = "%d h"
+	L.RESPEC_DAYS = "%d días"
 	L.SWING_NAME = "Barras de golpe"
 	L.SEC_SWING = "Una barra por arma"
 	L.OPT_SWING_ON = "Barras de golpe"
@@ -486,6 +528,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 		"  /huntergod dr  - apuntar lo que dice el juego de los rendimientos decrecientes",
 		"  /huntergod estilo  - a distancia o cuerpo a cuerpo, y por qué",
 		"  /huntergod golpes  - probar las barras de golpe",
+		"  /huntergod talentos  - cuándo baja el precio de reiniciar talentos",
 		"  /municion flechas | balas | ambas | arma  - qué munición marca el mapa",
 		"  /municion cerca  - ruta al vendedor útil más cercano",
 		"  /municion instructores | establos | comida | faccion | minimapa | continente | clase | boton  - activar o quitar cada opción",

@@ -69,6 +69,8 @@ local defaults = {
 	petStatus = { happy = true, health = true, healthPct = 40, wrath = true },
 	petToast = { level = true, training = true, sound = true },
 	minimapButton = { hide = false, angle = 215 },
+	-- At the class trainer: when the talent reset price drops. The trainer options seen to lead to the reset
+	respec = { enabled = true, options = {} },
 	positions = {},
 }
 
@@ -92,6 +94,7 @@ end
 -- Forever: FarmGod's tabs, 23 Nov 2026, had their text, shown, at full alpha and with a width,
 -- and nothing on screen. The game's font goes in first, so a font that can't load still shows
 local fontObjects, fontCount = {}, 0
+ns.THIN_FONT = "Fonts\\ARIALN.TTF" -- the game's narrow font, for small numbers that shouldn't weigh
 function ns.UseFont(fontString, file, size, flags)
 	local gameFont = GameFontNormal:GetFont()
 	file, flags = file or gameFont, flags or ""
