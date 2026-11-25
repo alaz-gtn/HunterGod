@@ -76,10 +76,10 @@ local defaults = {
 	-- The procs, drawn around you: wind up both sides with Quick Shots and Quick Strikes, a target at
 	-- your feet with Rapid Killing
 	procs = {
-		size = 60, -- %: around your character, not over half the screen
+		size = 40, -- %: around your character, not over half the screen
 		gap = 140, -- from the middle to each side of the wind
-		alpha = 85, -- the burst as it procs, %
-		calm = 35, -- afterwards, while it lasts: fainter, %
+		alpha = 60, -- the burst as it procs, %
+		calm = 20, -- afterwards, while it lasts: fainter, %
 		timer = true, -- the seconds they have left
 		timerSize = 20,
 		speed = { enabled = true, color = { r = 0.67, g = 0.83, b = 0.45 } }, -- the hunter's green
@@ -258,11 +258,26 @@ SlashCmdList.HUNTERGOD = function(msg)
 	end
 end
 
+-- Saved settings that need more than filling in. 2: 1.5.0 drew the procs at 60% and 85/35%
+-- strength; left as they were, they take the smaller, fainter look
+local SETTINGS_VERSION = 2
+function ns.MigrateSettings(saved, fresh)
+	if not fresh and (saved.version or 1) < 2 and type(saved.procs) == "table" then
+		local procs, new = saved.procs, defaults.procs
+		if procs.size == 60 then procs.size = new.size end
+		if procs.alpha == 85 then procs.alpha = new.alpha end
+		if procs.calm == 35 then procs.calm = new.calm end
+	end
+	saved.version = SETTINGS_VERSION
+end
+
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:SetScript("OnEvent", function(self, event, name)
 	if name ~= addonName then return end
+	local fresh = HunterGodDB == nil
 	HunterGodDB = Fill(HunterGodDB or {}, defaults)
+	ns.MigrateSettings(HunterGodDB, fresh)
 	ns.db = HunterGodDB
 	self:UnregisterEvent("ADDON_LOADED")
 end)

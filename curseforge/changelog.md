@@ -1,3 +1,8 @@
+# 1.5.1
+
+- **Proc animations smaller and more see-through**: they now show at 40% size (was 60%), 60% strength as they proc (was 85%) and 20% while they last (was 35%), so they stay around your character without covering the fight. If you hadn't changed these in the Procs tab, you get the new look on its own; anything you set yourself stays as it was.
+- The Procs tab now goes down to 20% size and 10% strength.
+
 # 1.5.0
 
 - **Proc animations**: wind rushing up both sides of you while **Quick Shots** or **Quick Strikes** is up (Deadly Aspects: 30% faster shots or swings for 12 seconds), and a target turning on the ground at your feet with **Rapid Killing** (your next Shot deals 20% more). A burst as each procs, then a calmer version while it lasts, with the seconds it has left. The game itself draws them, so they work in combat too. Colour, size, place and strength in the new Procs tab; `/huntergod procs` shows them.

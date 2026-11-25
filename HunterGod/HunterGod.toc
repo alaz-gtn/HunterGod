@@ -4,7 +4,7 @@
 ## Notes-esES: Mejoras para cazadores: distancia al objetivo, barras de golpe, avisos de aspecto, munición y comida de la mascota, y vendedores de munición, instructores y establos en el mapa. /huntergod
 ## Notes-esMX: Mejoras para cazadores: distancia al objetivo, barras de golpe, avisos de aspecto, munición y comida de la mascota, y vendedores de munición, instructores y establos en el mapa. /huntergod
 ## Author: wowforeverplus
-## Version: 1.5.0
+## Version: 1.5.1
 ## Category: Class
 ## SavedVariables: HunterGodDB
 ## SavedVariablesPerCharacter: HunterGodCharDB

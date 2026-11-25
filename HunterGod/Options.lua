@@ -693,7 +693,7 @@ local function Build()
 		y = Action(page, y, L.OPT_PROC_TEST, L.TRY, function() ns.TestProcs(key) end)
 	end
 	y = Section(page, y, L.SEC_LOOK)
-	y = Slider(page, y, L.OPT_PROCS_SIZE, 50, 200, 10, function() return procs.size end,
+	y = Slider(page, y, L.OPT_PROCS_SIZE, 20, 200, 5, function() return procs.size end,
 		function(v) ns.SetProcsSize(v) ns.PeekProcs() end)
 	y = Slider(page, y, L.OPT_PROCS_X, -600, 600, 5, function() return (ns.ProcsOffset()) end,
 		function(v) ns.MoveProcs(v, select(2, ns.ProcsOffset())) ns.PeekProcs() end)
@@ -701,7 +701,7 @@ local function Build()
 		function(v) ns.MoveProcs((ns.ProcsOffset()), v) ns.PeekProcs() end)
 	y = Slider(page, y, L.OPT_PROCS_GAP, 60, 400, 5, function() return procs.gap end,
 		function(v) procs.gap = v ProcsChanged("speed") end)
-	y = Slider(page, y, L.OPT_PROCS_ALPHA, 20, 100, 5, function() return procs.alpha end,
+	y = Slider(page, y, L.OPT_PROCS_ALPHA, 10, 100, 5, function() return procs.alpha end,
 		function(v) procs.alpha = v ProcsChanged() end)
 	y = Slider(page, y, L.OPT_PROCS_CALM, 0, 100, 5, function() return procs.calm end,
 		function(v) procs.calm = v ProcsChanged() end)

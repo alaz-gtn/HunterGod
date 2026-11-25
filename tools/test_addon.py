@@ -2177,7 +2177,7 @@ check(files(wind).count(MEDIA + "wind_glow") == 4 and files(wind).count(MEDIA + 
       "two columns of wind, calm and burst")
 check(files(target).count(MEDIA + "ring_core") == 2 and files(target).count(MEDIA + "ring_base") == 2,
       "a target on the ground, calm and burst")
-check(wind.calm.alpha == 0.35 and wind.strike.alpha == 0.85, "the burst strong, the calm fainter")
+check(wind.calm.alpha == 0.2 and wind.strike.alpha == 0.6, "the burst stronger, the calm fainter, both see-through")
 check({(x * side, y) for x, y, side in spots(wind)} == {(140, 0)} and {side for _, _, side in spots(wind)} == {-1, 1},
       f"140 out from the middle on each side: {spots(wind)}")
 check(spots(target) == {(0, -150, 0)}, f"the target in the middle, at your feet: {spots(target)}")
@@ -2191,8 +2191,18 @@ check(wind.timer.font[2] == 20 and target.timer.font[2] == 16 and wind.timer.sho
       "the target's seconds a little smaller, inside it")
 holder, place = speed.holder, speed.place
 check(place.point[1] == "CENTER" and G.Same(place.point[2], G.UIParent) and place.point[5] == -20
-      and G.Same(holder.point[2], place) and holder.scale == 0.6 and kill.holder.scale == 0.6,
-      "around you: a bit under the middle, at 60%")
+      and G.Same(holder.point[2], place) and holder.scale == 0.4 and kill.holder.scale == 0.4,
+      "around you: a bit under the middle, at 40%")
+for saved, fresh, want in ((dict(size=60, alpha=85, calm=35), False, (40, 60, 20)),
+                           (dict(size=80, alpha=85, calm=10), False, (80, 60, 10)),
+                           (dict(size=60, alpha=85, calm=35, v=2), False, (60, 85, 35))):
+    old = lua.table(procs=lua.table(size=saved["size"], alpha=saved["alpha"], calm=saved["calm"]), version=saved.get("v"))
+    ns.MigrateSettings(old, fresh)
+    got = (old.procs.size, old.procs.alpha, old.procs.calm)
+    check(got == want and old.version == 2, f"settings from 1.5.0 {saved}: what was left as it came gets smaller and fainter {got}")
+fresh_db = lua.table()
+ns.MigrateSettings(fresh_db, True)
+check(fresh_db.version == 2, "new settings start at the current version")
 check(not speed.spot.shown, "the samples are hidden")
 
 S.auras = lua.table("Quick Shots")
