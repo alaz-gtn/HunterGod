@@ -19,7 +19,7 @@ lua.globals().LOCALE = LOCALE
 
 lua.execute(r'''
 print = function(...) local t = {} for i = 1, select("#", ...) do t[#t+1] = tostring((select(i, ...))) end py_print(table.concat(t, " ")) end
-format = string.format; strlower = string.lower; max = math.max; min = math.min; abs = math.abs; floor = math.floor; ceil = math.ceil
+format = string.format; strlower = string.lower; strupper = string.upper; max = math.max; min = math.min; abs = math.abs; floor = math.floor; ceil = math.ceil
 strtrim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
 strsplit = function(sep, s) local out = {} for part in (s .. sep):gmatch("(.-)" .. sep:gsub("%-", "%%-")) do out[#out+1] = part end return unpack(out) end
@@ -311,6 +311,7 @@ SlashCmdList = {}
 -- Tracking: the minimap's list and the dungeon you're in
 SPELLS[19883], SPELLS[1494], SPELLS[19884], SPELLS[19885] = "Track Humanoids", "Track Beasts", "Track Undead", "Track Hidden"
 SPELLS[24293] = "Improved Tracking"
+SPELLS[2383], SPELLS[2580] = "Find Herbs", "Find Minerals"
 SPELLS[6150], SPELLS[1299448], SPELLS[415407] = "Quick Shots", "Quick Strikes", "Rapid Killing"
 -- The game's countdown text: whole seconds rounded up
 Enum.NumericRuleFormatRounding = { Up = 2 }
@@ -2116,6 +2117,53 @@ tb.scripts.OnClick(tb, "LeftButton")
 check(not tlist.shown, "no list while dragging")
 ns.SetUnlocked(False)
 check(not tb.shown, "locked: gone")
+
+# ---------------------------------------------------------------- Herbalism or Mining: their tracking, out in the world
+gb = G.NAMED["HunterGodGather"]
+gclick = G.NAMED["HunterGodReminderClickgather"]
+was = (G.TRACKING, S.instance, db.tracking.anywhere)
+check(db.gather.enabled and gb.width == 40, "on by default, the same size as the other reminders")
+S.instance = None
+db.tracking.anywhere = False
+G.TRACKING = lua.eval("""{
+  { name = "Find Herbs", texture = 1, active = false, type = "spell", subType = -1, spellID = 2383 },
+  { name = "Track Beasts", texture = 132328, active = true, type = "spell", subType = 1, spellID = 1494 },
+}""")
+GT = G.TRACKING
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(gb.shown and gb.icon.tex == 2383, "a herbalist tracking Beasts out in the world: Find Herbs in the row")
+check(gclick.shown and gclick.attrs.type1 == "spell" and gclick.attrs.spell1 == "Find Herbs", "and a click puts it on")
+GT[1].active, GT[2].active = True, False
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(not gb.shown and not gclick.shown and db.gather.last == "herbs", "Find Herbs on: gone, and it remembers herbs")
+GT[1].active = False
+db.tracking.anywhere = True
+G.Fire("MINIMAP_UPDATE_TRACKING")
+check(not gb.shown, "with the creature reminder out in the world too, that one wins")
+db.tracking.anywhere = False
+S.instance, S.instanceID = "party", 36
+G.Fire("PLAYER_ENTERING_WORLD")
+check(not gb.shown, "not in dungeons")
+S.instance = None
+G.Fire("PLAYER_ENTERING_WORLD")
+check(gb.shown, "back out in the world")
+S.combat = True
+G.Fire("PLAYER_REGEN_DISABLED")
+check(not gb.shown and not gclick.shown, "not in a fight")
+S.combat = False
+G.Fire("PLAYER_REGEN_ENABLED")
+check(gb.shown and gclick.shown, "back after it")
+db.gather.enabled = False
+ns.UpdateGather()
+check(not gb.shown, "it can be turned off")
+db.gather.enabled = True
+S["class"] = "MAGE"
+ns.UpdateGather()
+check(not gb.shown, "only for hunters")
+S["class"] = "HUNTER"
+G.TRACKING, S.instance, db.tracking.anywhere = was
+ns.UpdateTracking()
+ns.UpdateGather()
 
 # ---------------------------------------------------------------- The row of reminders
 rgroup = G.NAMED["HunterGodReminders"]

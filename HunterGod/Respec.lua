@@ -7,9 +7,11 @@ local L = ns.L
 -- Players report it going up a step with each reset (1, 5, 10, then 5 g more each time up to
 -- 50 g) and down a step for each week since the last one, to 1 g (dtgre and LFCarry, Nov 2026;
 -- Blizzard hasn't published it). So the addon writes down each reset you pay for and each price
--- the trainer asks, and counts the weeks from there. The same file serves HunterGod and MageGod
-local CLASS = addonName == "MageGod" and "MAGE" or "HUNTER"
-local ACCENT = addonName == "MageGod" and { 0.25, 0.78, 0.92 } or { 0.67, 0.83, 0.45 }
+-- the trainer asks, and counts the weeks from there. The same file serves the whole family: the
+-- class comes from the addon's name (PriestGod: PRIEST) and the colour from its Init.lua
+local CLASS = strupper((addonName:gsub("God$", "")))
+local ACCENT = ns.ACCENT or ({ MageGod = { 0.25, 0.78, 0.92 }, HunterGod = { 0.67, 0.83, 0.45 } })[addonName]
+	or { 1, 0.82, 0 }
 local GOLD = 10000
 local TIERS = { 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 } -- in gold
 local WEEK = 7 * 24 * 3600

@@ -4,7 +4,7 @@ Addon de mejoras para cazadores en WoW Forever: distancia al objetivo, avisos de
 
 ## Carpetas
 
-- `HunterGod/`: el addon tal como se instala en `_forever_\Interface\AddOns`. Un archivo por función: `Init.lua` (ajustes, comandos, mover avisos), `Map.lua`, `Range.lua`, `Aspects.lua`, `Ammo.lua`, `Pet.lua`, `Swing.lua` (las barras de golpe, con el evento PLAYER_SWING de Forever), `Respec.lua` (cuándo baja el precio de reiniciar talentos; el mismo archivo que en MageGod), `Reminders.lua` (la fila de avisos sobre el personaje), `Tracking.lua` (el aviso de rastreo en mazmorras), `Procs.lua` (las animaciones de los procs; sus texturas salen de `tools/make_procs.py`), `MinimapButton.lua` y `Options.lua`.
+- `HunterGod/`: el addon tal como se instala en `_forever_\Interface\AddOns`. Un archivo por función: `Init.lua` (ajustes, comandos, mover avisos), `Map.lua`, `Range.lua`, `Aspects.lua`, `Ammo.lua`, `Pet.lua`, `Swing.lua` (las barras de golpe, con el evento PLAYER_SWING de Forever), `Respec.lua` (cuándo baja el precio de reiniciar talentos; el mismo archivo que en MageGod), `Reminders.lua` (la fila de avisos sobre el personaje), `Tracking.lua` (el aviso de rastreo en mazmorras), `Gathering.lua` (el aviso de rastreo de hierbas o minerales en el mundo; el mismo archivo en MageGod y en los addons de las demás clases), `Procs.lua` (las animaciones de los procs; sus texturas salen de `tools/make_procs.py`), `MinimapButton.lua` y `Options.lua`.
 - `curseforge/`: logo, descripción y registro de cambios para la página del proyecto.
 - `release/`: los zips que se suben a CurseForge.
 - `tools/`: scripts para regenerar los datos, probar el addon, hacer el logo y empaquetar.

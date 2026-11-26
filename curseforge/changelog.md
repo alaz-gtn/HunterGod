@@ -1,3 +1,7 @@
+# 1.6.0
+
+- **Herbs and minerals tracking reminder**: if you're a herbalist or a miner and have neither Find Herbs nor Find Minerals on out in the world, its icon joins the row of reminders (the one you had on last), and a click out of combat puts it on. Not in dungeons, raids or battlegrounds, on a flight or in a fight. If you asked for the creature tracking reminder out in the world too, that one wins: a hunter tracks one thing at a time. An option in the Tracking section turns it off.
+
 # 1.5.1
 
 - **Proc animations smaller and more see-through**: they now show at 40% size (was 60%), 60% strength as they proc (was 85%) and 20% while they last (was 35%), so they stay around your character without covering the fight. If you hadn't changed these in the Procs tab, you get the new look on its own; anything you set yourself stays as it was.

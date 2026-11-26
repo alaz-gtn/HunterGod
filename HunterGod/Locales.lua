@@ -156,6 +156,8 @@ local L = {
 	SEC_TRACKING = "Tracking",
 	OPT_TRACKING = "In dungeons and raids, remind me when I'm not tracking creatures",
 	OPT_TRACKING_WORLD = "Out in the world too",
+	OPT_GATHER = "Herbalism or Mining: remind me to turn on %s or %s out in the world",
+	GATHER_OFF = "Not tracking herbs or minerals",
 	TRACKING_HINT = "With herbs, minerals, Track Hidden or nothing on, it shows until you track a creature type. Click it for the list of your creature trackings and pick one; right-click leaves that dungeon or zone alone.",
 	OPT_TRACKING_TALENT = "Only with points in %s",
 	OPT_TRACKING_TEST = "See how it looks in a dungeon",
@@ -457,6 +459,8 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.SEC_TRACKING = "Rastreo"
 	L.OPT_TRACKING = "En mazmorras y bandas, avisarme si no rastreo criaturas"
 	L.OPT_TRACKING_WORLD = "También en el mundo abierto"
+	L.OPT_GATHER = "Herboristería o Minería: recordarme poner %s o %s fuera de mazmorras"
+	L.GATHER_OFF = "Sin rastrear hierbas ni minerales"
 	L.TRACKING_HINT = "Con hierbas, minerales, Rastrear ocultos o nada puesto, sale hasta que rastreas un tipo de criatura. Haz clic para ver tus rastreos de criaturas y elegir uno; con clic derecho deja en paz esa mazmorra o zona."
 	L.OPT_TRACKING_TALENT = "Solo con puntos en %s"
 	L.OPT_TRACKING_TEST = "Ver cómo sale en una mazmorra"

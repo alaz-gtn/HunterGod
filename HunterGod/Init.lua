@@ -53,6 +53,8 @@ local defaults = {
 	-- In dungeons and raids, a reminder when you aren't tracking creatures. last: the one you had on last
 	-- onlyTalent: only with points in Improved Tracking. anywhere: out in the world too, not only in dungeons
 	tracking = { enabled = true, onlyTalent = true, anywhere = false },
+	-- Herbalism or Mining: Find Herbs or Find Minerals on, out in the world (last: the one you had on)
+	gather = { enabled = true },
 	lowAmmo = { enabled = true, threshold = 1000, merchant = true },
 	-- A bar for each weapon's swing: Auto Shot, main hand, off hand
 	swing = {

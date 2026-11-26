@@ -656,7 +656,10 @@ local function Build()
 	y = Check(page, y, format(L.OPT_TRACKING_TALENT, SpellName(24293) or "Improved Tracking"), function() return db.tracking.onlyTalent end,
 		function(v) db.tracking.onlyTalent = v ns.UpdateTracking() end, SpellIcon(24293))
 	y = Check(page, y, L.OPT_TRACKING_WORLD, function() return db.tracking.anywhere end,
-		function(v) db.tracking.anywhere = v ns.UpdateTracking() end)
+		function(v) db.tracking.anywhere = v ns.UpdateTracking() ns.UpdateGather() end)
+	y = Check(page, y, format(L.OPT_GATHER, SpellName(2383) or "Find Herbs", SpellName(2580) or "Find Minerals"),
+		function() return db.gather.enabled end, function(v) db.gather.enabled = v ns.UpdateGather() end,
+		SpellIcon(2580, "Interface\\Icons\\Spell_Nature_Earthquake"))
 	y = Action(page, y, L.OPT_TRACKING_TEST, L.TRY, ns.TestTracking)
 	local trackingHint = Text(page, "GameFontHighlightSmall", MUTED)
 	trackingHint:SetPoint("TOPLEFT", 10, y - 6)

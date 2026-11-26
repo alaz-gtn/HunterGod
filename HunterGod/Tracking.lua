@@ -330,6 +330,38 @@ button:SetScript("OnLeave", GameTooltip_Hide)
 button:SetScript("OnClick", OnClick)
 ns.AddReminder("tracking", button)
 
+-- Herbalism or Mining without its tracking on, out in the world (Gathering.lua decides): its icon
+-- in the row, and a click out of combat puts it on. Where you asked for the creature reminder out
+-- in the world too, that one wins: a hunter tracks one thing at a time
+local gather = CreateFrame("Frame", "HunterGodGather", UIParent)
+gather:Hide()
+ns.StyleReminder(gather)
+local gatherSpell
+local gatherFighting = false
+
+function ns.GatherBlocked()
+	return db and db.enabled and db.anywhere and (not db.onlyTalent or ns.HasImprovedTracking()) or false
+end
+
+function ns.UpdateGather()
+	local g
+	local dead = UnitIsDeadOrGhost and UnitIsDeadOrGhost("player")
+	if not ns.unlocked and not gatherFighting and ns.IsHunter() and not (dead and not ns.IsSecret(dead)) then
+		g = ns.GatherReminder()
+	end
+	gatherSpell = g and g.spell
+	if g then
+		gather.icon:SetTexture(g.icon)
+		gather:Show()
+	else
+		gather:Hide()
+	end
+	ns.LayoutReminders()
+end
+ns.GatherChanged = ns.UpdateGather
+
+ns.AddReminder("gather", gather, function() return gatherSpell end, function(tip) tip:AddLine(L.GATHER_OFF) end)
+
 -- On the screen, not on the reminder: a secure child would lock the reminder in combat too
 list = CreateFrame("Frame", "HunterGodTrackingList", UIParent)
 list:SetSize(LIST_WIDTH, ROW)
@@ -343,6 +375,10 @@ events:SetScript("OnEvent", function(self, event)
 		db = ns.db.tracking
 		LearnNames()
 		table.insert(ns.refreshers, ns.UpdateTracking)
+		table.insert(ns.refreshers, ns.UpdateGather)
+		self:RegisterEvent("PLAYER_DEAD")
+		self:RegisterEvent("PLAYER_ALIVE")
+		self:RegisterEvent("PLAYER_UNGHOST")
 		self:RegisterEvent("PLAYER_ENTERING_WORLD")
 		self:RegisterEvent("PLAYER_REGEN_DISABLED")
 		self:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -356,13 +392,17 @@ events:SetScript("OnEvent", function(self, event)
 	elseif event == "PLAYER_REGEN_DISABLED" then
 		-- The last moment the game lets the secure list go: it doesn't stay open in a fight
 		list:Hide()
+		gatherFighting = true
+		ns.UpdateGather()
 		return
 	elseif event == "PLAYER_REGEN_ENABLED" then
 		if not button:IsShown() then list:Hide() end
+		gatherFighting = false
 	elseif event == "SPELLS_CHANGED" then
 		LearnNames()
 	end
 	ns.UpdateTracking()
+	ns.UpdateGather()
 end)
 
 ns.TrackingButton = function() return button, list, rows end
