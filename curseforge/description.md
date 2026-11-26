@@ -37,6 +37,7 @@ Everything is set up from the **minimap button** (or `/huntergod`) in one option
 - **Click them out of combat:** the aspect reminder puts on the right aspect for how you fight, and Trueshot Aura casts it. The aspect reminder also shows when you target an enemy before a pull, so you can click it.
 - **Trueshot Aura:** its icon with a countdown in its last 2 minutes, grey once it's gone. It keeps counting in combat.
 - **Tracking** in dungeons and raids: when you're tracking herbs, minerals or nothing instead of a creature type. Click it for your creature trackings and pick one. Only with points in Improved Tracking (an option).
+- **Herbs and minerals** out in the world: if you're a herbalist or a miner and have neither Find Herbs nor Find Minerals on, its icon joins the row (the one you had on last), and a click puts it on. Not in dungeons, on a flight or in a fight.
 
 ## Traps
 
@@ -121,7 +122,7 @@ HunterGod is licensed under the GNU GPL v3 or later.
 - **Animaciones de procs:** viento subiendo a los dos lados con Quick Shots y Quick Strikes (Deadly Aspects), y una mira girando a tus pies con Rapid Killing. Las dibuja el propio juego, así que salen en combate. `/huntergod procs` las enseña.
 - **Avisos sobre el personaje:** aspecto, Aura de disparo certero y rastreo, juntos y centrados. Fuera de combate se pueden clicar: el de aspecto te pone el que toca y el de Aura de disparo certero la lanza.
 - **Aspectos:** te avisa si estás en combate con el Aspecto del guepardo o de la manada, o si te falta tu aspecto de combate, también fuera de combate.
-- **Rastreo:** en mazmorras y bandas te avisa si no rastreas un tipo de criatura (con hierbas, minerales o nada puesto); con un clic eliges uno de la lista.
+- **Rastreo:** en mazmorras y bandas te avisa si no rastreas un tipo de criatura (con hierbas, minerales o nada puesto); con un clic eliges uno de la lista. Fuera de mazmorras, si eres herborista o minero y no llevas su rastreo, te lo recuerda y con un clic lo pones.
 - **Trampas:** TRAMPAS LISTAS cuando vuelven tus trampas después de usar una en una pelea, y lo que le queda de Trampa congelante al bicho congelado, junto a su placa (funciona en combate).
 - **Munición:** te avisa cuando te quedan menos de 1000 flechas o balas (el número lo eliges tú) y te lo recuerda en los vendedores que la tienen.
 - **Comida de la mascota:** una barra con la comida de tus bolsas que come tu mascota; haz clic para darle de comer. Te avisa si te queda poca, y en el mapa marca los vendedores con comida que le guste.
