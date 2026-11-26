@@ -195,9 +195,14 @@ local function Texture() local t = { shown = true } setmetatable(t, { __index = 
   elseif k == "IsShown" then return self.shown
   elseif k == "SetTexture" then self.tex = ... elseif k == "SetDesaturated" then self.desat = ...
   elseif k == "SetColorTexture" or k == "SetTextColor" then self.color = { ... }
-  elseif k == "SetText" then self.text = ... elseif k == "GetStringWidth" then return #tostring(self.text or "") * 6
+  elseif k == "SetText" then
+    -- As in the game: a text with no font can't be written
+    if rawget(self, "isFont") and not rawget(self, "font") then error("FontString:SetText(): Font not set", 2) end
+    self.text = ...
+  elseif k == "GetStringWidth" then return #tostring(self.text or "") * 6
   elseif k == "SetWidth" then self.width = ... elseif k == "SetAlpha" then self.alpha = ...
   elseif k == "SetFormattedText" then
+    if rawget(self, "isFont") and not rawget(self, "font") then error("FontString:SetFormattedText(): Font not set", 2) end
     local args = { ... }
     for i = 2, #args do if type(args[i]) == "table" then args[i] = args[i].hidden self.hiddenText = true end end
     self.text = format(unpack(args))
@@ -225,7 +230,8 @@ function CreateFrame(kind, name, parent, template)
   function f:RegisterUnitEvent(e) self.events[e] = true end
   function f:UnregisterEvent(e) self.events[e] = nil end
   function f:CreateTexture() return Texture() end
-  function f:CreateFontString() return Texture() end
+  -- A text made from a template has its font; one made bare has none until it's given one
+  function f:CreateFontString(_, _, template) local t = Texture() t.isFont = true if template then t.font = { template } end return t end
   function f:SetAlpha(a) self.hiddenAlpha = type(a) == "table" self.alpha = self.hiddenAlpha and a.hidden or a end
   function f:SetShown(v) self.shown = v and true or false end
   function f:Hide() self.shown = false end function f:Show() self.shown = true end
