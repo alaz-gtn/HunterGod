@@ -26,6 +26,9 @@ jobs:
           python -I tools/test_addon.py HunterGod enUS
           python -I tools/test_addon.py HunterGod esES
 
+      - name: Look for what the tests can't see (TOC, syntax, texts, events, fonts)
+        run: python -I tools/lint_addon.py . HunterGod
+
       - name: Upload to CurseForge
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}

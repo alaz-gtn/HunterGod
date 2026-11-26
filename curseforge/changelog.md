@@ -1,3 +1,7 @@
+# 1.6.1
+
+- **With every ...God addon on**: on a character of another class this one stays out of the way. It says nothing in the chat (a vendor no longer hears the same line from each addon) and won't enter move mode; it tells you why if you try.
+
 # 1.6.0
 
 - **Herbs and minerals tracking reminder**: if you're a herbalist or a miner and have neither Find Herbs nor Find Minerals on out in the world, its icon joins the row of reminders (the one you had on last), and a click out of combat puts it on. Not in dungeons, raids or battlegrounds, on a flight or in a fight. If you asked for the creature tracking reminder out in the world too, that one wins: a hunter tracks one thing at a time. An option in the Tracking section turns it off.

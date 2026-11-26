@@ -126,6 +126,7 @@ local L = {
 	UNLOCKED = "displays unlocked: drag them where you want, then lock them (right-click the minimap button).",
 	LOCKED = "displays locked.",
 	NOT_IN_COMBAT = "can't do that in combat.",
+	OTHER_CLASS = "only for a hunter: on this character it stays hidden.",
 	-- Minimap button
 	TIP_AMMO = "Ammo: %d",
 	TIP_PET_FOOD = "Pet food: %d",
@@ -432,6 +433,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.UNLOCKED = "avisos desbloqueados: arrástralos donde quieras y luego bloquéalos (clic derecho en el botón del minimapa)."
 	L.LOCKED = "avisos bloqueados."
 	L.NOT_IN_COMBAT = "no se puede en combate."
+	L.OTHER_CLASS = "solo para un cazador: en este personaje no se muestra."
 	L.TIP_AMMO = "Munición: %d"
 	L.TIP_PET_FOOD = "Comida de la mascota: %d"
 	L.TIP_LEFT = "Clic izquierdo: opciones"
