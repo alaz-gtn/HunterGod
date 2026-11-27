@@ -2481,6 +2481,131 @@ check(out == [L.PREFIX + L.OTHER_CLASS] and not ns.unlocked and not list(G.Visib
       f"another class: no move mode, and it says why: {out}")
 
 blocked = sorted(set(G.BLOCKED.values()))
+# ---------------------------------------------------------------- At a merchant: repair and buy reagents (shared files)
+# (ClassGods/test_vendor_block.py: the same block in every ...God harness)
+lua.execute('''
+G.bought = {}
+G.prices = {}
+GetMerchantNumItems = function() return #G.merchant end
+GetMerchantItemID = function(i) return G.merchant[i] end
+GetMerchantItemInfo = function(i) local id = G.merchant[i] return "item " .. id, 0, G.prices[id] or 100, 1, -1, true end
+GetMerchantItemMaxStack = function() return 20 end
+BuyMerchantItem = function(i, n)
+  local id = G.merchant[i]
+  table.insert(G.bought, n)
+  G.items[id] = (G.items[id] or 0) + n
+  G.money = G.money - (G.prices[id] or 100) * n
+end
+GetMoney = function() return G.money or 0 end
+GetRepairAllCost = function() return G.repairCost or 0, (G.repairCost or 0) > 0 end
+RepairAllItems = function() G.repaired = (G.repaired or 0) + 1 G.money = G.money - G.repairCost G.repairCost = 0 end
+CanMerchantRepair = function() return G.repairs end
+GetCoinTextureString = nil
+''')
+if S["items"] is None:
+    S["items"] = lua.table()
+S.merchant = lua.table()
+VT = ns.REPAIR_TEXT
+me = {"HunterGod": "HUNTER", "MageGod": "MAGE", "WarriorGod": "WARRIOR", "PaladinGod": "PALADIN", "RogueGod": "ROGUE",
+      "PriestGod": "PRIEST", "ShamanGod": "SHAMAN", "WarlockGod": "WARLOCK", "DruidGod": "DRUID"}[Path(ADDON).resolve().name]
+S["class"] = me
+other = "PRIEST" if me != "PRIEST" else "MAGE"
+check(db.repair.auto is False and VT.OPT_AUTO, "repairing at a merchant: an option, off by default")
+S.repairs, S.repairCost, S.money, S.repaired = True, 12345, 100000, 0
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+check(S.repaired == 0, "off: it doesn't repair")
+db.repair.auto = True
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+check(S.repaired == 1 and S.money == 100000 - 12345 and len(printed) == 1 and VT.REPAIRED % "1g 23s 45c" in printed[0],
+      f"on: it repairs everything and says what it cost: {list(printed)}")
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+check(S.repaired == 1, "nothing worn: it doesn't repair again")
+S.repairCost, S.money = 50000, 1000
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+check(S.repaired == 1 and len(printed) == 1 and VT.SHORT % "5g 0s 0c" in printed[0],
+      f"not enough money: says so and doesn't repair: {list(printed)}")
+S.money = 100000
+S.repairs = False
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+check(S.repaired == 1 and not printed, "a merchant who doesn't repair: nothing")
+S.repairs = True
+S["class"] = other
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+check(S.repaired == 1 and not printed, "another class: this addon doesn't repair (that class's own does)")
+S["class"] = me
+S.repairs, S.repairCost = False, 0
+db.repair.auto = False
+
+own = ns.REAGENTS[me] if ns.REAGENTS else None
+r = None
+if own:
+    for i in range(1, len(own) + 1):
+        if own[i].vendor and own[i].stock and G.C_Spell.GetSpellName(own[i].spells[1]):
+            r = own[i]
+            break
+if r:
+    RT2 = ns.REAGENT_TEXT
+    check(db.reagents.buy is False and RT2.OPT_BUY, "buying reagents: an option, off by default")
+    # Only its spell known: a better rank would take over
+    for i in range(1, len(own) + 1):
+        for j in range(1, len(own[i].spells) + 1):
+            S.known[own[i].spells[j]] = None
+    know(r.spells[1])
+    G.Fire("SPELLS_CHANGED")
+    S["items"][r.item] = 2
+    S.merchant = lua.table(159, r.item)
+    S.money = 1000000
+    printed.clear()
+    G.Fire("MERCHANT_SHOW")
+    check(len(S.bought) == 0, "off: it doesn't buy")
+    db.reagents.buy = True
+    printed.clear()
+    G.Fire("MERCHANT_SHOW")
+    want = r.stock - 2
+    check(S["items"][r.item] == r.stock and sum(S.bought[i] for i in range(1, len(S.bought) + 1)) == want
+          and all(S.bought[i] <= 20 for i in range(1, len(S.bought) + 1)),
+          f"on: it buys up to {r.stock}, at most a stack at a time: {S['items'][r.item]}")
+    money = f"{want * 100 // 10000}g {want * 100 // 100 % 100}s 0c"
+    check(len(printed) == 1 and RT2.BOUGHT.split("%d")[0] in printed[0] and money in printed[0],
+          f"and says what it bought and spent: {list(printed)}")
+    bought = len(S.bought)
+    printed.clear()
+    G.Fire("MERCHANT_SHOW")
+    check(len(S.bought) == bought and not printed, "enough already: nothing")
+    S["items"][r.item] = 0
+    S.money = 250
+    printed.clear()
+    G.Fire("MERCHANT_SHOW")
+    check(S["items"][r.item] == 2, f"only what the money pays for: {S['items'][r.item]}")
+    S.money = 0
+    S["items"][r.item] = 0
+    printed.clear()
+    G.Fire("MERCHANT_SHOW")
+    check(S["items"][r.item] == 0 and len(printed) == 1 and RT2.SHORT.split("%s")[0] in printed[0],
+          f"no money: says so: {list(printed)}")
+    S.money = 1000000
+    S["class"] = other
+    printed.clear()
+    G.Fire("MERCHANT_SHOW")
+    check(S["items"][r.item] == 0, "another class: this addon doesn't buy")
+    S["class"] = me
+    db.reagents.enabled = False
+    G.Fire("MERCHANT_SHOW")
+    check(S["items"][r.item] == r.stock, "it buys with the low reagent reminder off too")
+    db.reagents.enabled = True
+    db.reagents.buy = False
+    know(r.spells[1], on=False)
+    G.Fire("SPELLS_CHANGED")
+    S["items"][r.item] = 0
+    S.merchant = lua.table()
+    G.Fire("BAG_UPDATE_DELAYED")
+
 check(not blocked, f"nothing secure touched in a fight (the game blocks it): {blocked}")
 leaks = sorted(set(G.LEAKS.values()))
 check(not leaks, f"no globals left behind: {leaks}")

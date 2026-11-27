@@ -55,6 +55,8 @@ local defaults = {
 	tracking = { enabled = true, onlyTalent = true, anywhere = false },
 	-- Herbalism or Mining: Find Herbs or Find Minerals on, out in the world (last: the one you had on)
 	gather = { enabled = true },
+	-- Repair.lua: only the repair at a merchant (the reminders are for the other classes' rows)
+	repair = { enabled = false, low = 25, bags = 2, auto = false },
 	lowAmmo = { enabled = true, threshold = 1000, merchant = true },
 	-- A bar for each weapon's swing: Auto Shot, main hand, off hand
 	swing = {

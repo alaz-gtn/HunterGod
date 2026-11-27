@@ -761,6 +761,8 @@ local function Build()
 	y = Check(page, y, L.OPT_AMMO_ON, function() return ammo.enabled end, function(v) ammo.enabled = v ns.UpdateAmmo() end)
 	y = Slider(page, y, L.OPT_THRESHOLD, 100, 4000, 100, function() return ammo.threshold end, function(v) ammo.threshold = v ns.UpdateAmmo() end)
 	y = Check(page, y, L.OPT_MERCHANT, function() return ammo.merchant end, function(v) ammo.merchant = v end)
+	y = Check(page, y, ns.REPAIR_TEXT.OPT_AUTO, function() return db.repair.auto end, function(v) db.repair.auto = v end,
+		"Interface\\Icons\\INV_Misc_Coin_02")
 	Done(page, y)
 
 	-- Pet

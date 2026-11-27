@@ -1,3 +1,7 @@
+# 1.7.0
+
+- **Repair at a merchant** (an option, off by default): talking to a merchant who repairs fixes everything you wear and carry with your money, and says in the chat what it cost; without enough money it says so. Only this class's addon does it, so with every ...God addon on you pay once.
+
 # 1.6.1
 
 - **With every ...God addon on**: on a character of another class this one stays out of the way. It says nothing in the chat (a vendor no longer hears the same line from each addon) and won't enter move mode; it tells you why if you try.
