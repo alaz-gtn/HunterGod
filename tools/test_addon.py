@@ -2606,6 +2606,108 @@ if r:
     S.merchant = lua.table()
     G.Fire("BAG_UPDATE_DELAYED")
 
+# ---------------------------------------------------------------- Missing buffs your group can give (shared file)
+# (ClassGods/test_groupneeds_block.py: the same block in every ...God harness)
+me = {"HunterGod": "HUNTER", "MageGod": "MAGE", "WarriorGod": "WARRIOR", "PaladinGod": "PALADIN", "RogueGod": "ROGUE",
+      "PriestGod": "PRIEST", "ShamanGod": "SHAMAN", "WarlockGod": "WARLOCK", "DruidGod": "DRUID"}[Path(ADDON).resolve().name]
+party = [c if c != me else "WARRIOR" for c in ("MAGE", "PRIEST", "DRUID", "PALADIN")]
+lua.execute('''
+local saved = { IsInInstance = IsInInstance, IsInGroup = IsInGroup, IsInRaid = IsInRaid, UnitExists = UnitExists,
+  UnitIsUnit = UnitIsUnit, UnitClass = UnitClass, aura = C_UnitAuras.GetAuraDataByIndex, SendChatMessage = SendChatMessage,
+  UnitIsDeadOrGhost = UnitIsDeadOrGhost, InCombatLockdown = InCombatLockdown, name = C_Spell.GetSpellName }
+G.needs = { party = {}, buffs = {}, inside = false, sent = {} }
+IsInInstance = function() return G.needs.inside, G.needs.inside and "party" or "none" end
+IsInGroup = function() return #G.needs.party > 0 end
+IsInRaid = function() return false end
+UnitExists = function(u) local i = type(u) == "string" and u:match("^party(%d)$") if i then return G.needs.party[tonumber(i)] ~= nil end return saved.UnitExists(u) end
+UnitIsUnit = function(a, b) return a == b end
+UnitClass = function(u)
+  if u == "player" then return "X", G.needs.class end
+  local i = type(u) == "string" and u:match("^party(%d)$")
+  if i then return "X", G.needs.party[tonumber(i)] end
+  return saved.UnitClass(u)
+end
+C_UnitAuras.GetAuraDataByIndex = function(u, i, f)
+  if u ~= "player" then return saved.aura(u, i, f) end
+  local n = G.needs.buffs[i]
+  if n then return { name = n } end
+end
+C_Spell.GetSpellName = function(id) return saved.name(id) or ("spell " .. id) end
+SendChatMessage = function(msg, channel) table.insert(G.needs.sent, msg .. "|" .. channel) end
+UnitIsDeadOrGhost = function() return false end
+InCombatLockdown = function() return G.needs.combat end
+function G.RestoreNeeds()
+  IsInInstance, IsInGroup, IsInRaid, UnitExists = saved.IsInInstance, saved.IsInGroup, saved.IsInRaid, saved.UnitExists
+  UnitIsUnit, UnitClass, C_UnitAuras.GetAuraDataByIndex = saved.UnitIsUnit, saved.UnitClass, saved.aura
+  SendChatMessage, UnitIsDeadOrGhost, InCombatLockdown, C_Spell.GetSpellName = saved.SendChatMessage, saved.UnitIsDeadOrGhost, saved.InCombatLockdown, saved.name
+end
+''')
+N = S.needs
+N["class"] = me
+NT = ns.GROUP_NEEDS_TEXT
+check(db.groupNeeds.enabled is True and NT.OPT and NT.OPT_ANYWHERE, "the missing buffs row: an option, on by default")
+st = ns.GroupNeedsState()
+gbar = st.bar
+
+
+def shown():
+    ns.UpdateGroupNeeds()
+    bs = st.buttons
+    return [bs[i].entry.key for i in range(1, len(bs) + 1) if bs[i].shown] if gbar.shown else []
+
+
+def name_of(i):
+    return G.C_Spell.GetSpellName(i)
+
+
+want = [k for k, c in (("intellect", "MAGE"), ("fortitude", "PRIEST"), ("mark", "DRUID"), ("blessing", "PALADIN"))
+        if c in party and c != me and not (k == "intellect" and me in ("WARRIOR", "ROGUE"))]
+N.party = lua.table(*party)
+check(shown() == [], "in a group, out in the world: nothing")
+N.inside = True
+check(shown() == want, f"in a dungeon with {party}: what they can give you ({shown()})")
+N.buffs = lua.table(name_of(21562))
+check("fortitude" not in shown(), "Prayer of Fortitude on you: Fortitude isn't missing")
+N.buffs = lua.table()
+first = [b for b in (st.buttons[i] for i in range(1, len(st.buttons) + 1)) if b.shown and b.entry.key != "blessing"][0]
+first.scripts.OnClick(first)
+check(list(N.sent.values()) == [NT.ASK % first.entry.name + "|PARTY"], f"a click asks for it in the party chat: {list(N.sent.values())}")
+first.scripts.OnClick(first)
+check(len(N.sent) == 1, "a second click right away: not asked again")
+S.now = S.now + 11
+first.scripts.OnClick(first)
+check(len(N.sent) == 2, "after a while: asked again")
+if "blessing" in want:
+    pal = [b for b in (st.buttons[i] for i in range(1, len(st.buttons) + 1)) if b.shown and b.entry.key == "blessing"][0]
+    pal.scripts.OnClick(pal)
+    check(st.menu.shown, "the blessing: a click opens the blessings")
+    kings = st.menu.rows[3]
+    kings.scripts.OnClick(kings)
+    check(not st.menu.shown and db.groupNeeds.blessing == "kings" and list(N.sent.values())[-1] == NT.ASK % name_of(20217) + "|PARTY",
+          f"picking Kings asks for it and remembers it: {list(N.sent.values())[-1]}")
+    N.buffs = lua.table(name_of(25898))
+    check("blessing" not in shown(), "Greater Blessing of Kings on you, one paladin: no blessing missing")
+    N.buffs = lua.table()
+    db.groupNeeds.blessing = "wisdom"
+N.combat = True
+check(shown() == [], "in a fight: nothing")
+N.combat = None
+db.groupNeeds.enabled = False
+check(shown() == [], "turned off: nothing")
+db.groupNeeds.enabled = True
+N.inside = False
+db.groupNeeds.anywhere = True
+check(shown() == want, "with 'also outside': out in the world too")
+db.groupNeeds.anywhere = False
+N.inside = True
+N["class"] = "HUNTER" if me != "HUNTER" else "MAGE"
+check(shown() == [], "another class's character: this addon draws nothing")
+N["class"] = me
+N.party = lua.table()
+check(shown() == [], "alone: nothing")
+S.RestoreNeeds()
+ns.UpdateGroupNeeds()
+
 check(not blocked, f"nothing secure touched in a fight (the game blocks it): {blocked}")
 leaks = sorted(set(G.LEAKS.values()))
 check(not leaks, f"no globals left behind: {leaks}")

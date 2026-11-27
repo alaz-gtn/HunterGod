@@ -57,6 +57,7 @@ local defaults = {
 	gather = { enabled = true },
 	-- Repair.lua: only the repair at a merchant (the reminders are for the other classes' rows)
 	repair = { enabled = false, low = 25, bags = 2, auto = false },
+	groupNeeds = { enabled = true, anywhere = false, blessing = "wisdom" },
 	lowAmmo = { enabled = true, threshold = 1000, merchant = true },
 	-- A bar for each weapon's swing: Auto Shot, main hand, off hand
 	swing = {
