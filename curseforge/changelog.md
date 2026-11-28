@@ -1,3 +1,7 @@
+# 1.8.1
+
+- **No more Lua errors in a group** ("Auras cannot be accessed when secret") from the missing buffs row: now it checks first whether the game hides your buffs.
+
 # 1.8.0
 
 - **Missing buffs row** in dungeons and raids: a small row with the buffs your group can give you and you don't have (Arcane Intellect with a mage in the group, Fortitude with a priest, Mark of the Wild with a druid, a blessing per paladin). Click one to ask for it in the group chat ("Missing Arcane Intellect"); the paladin's lets you pick the blessing to ask for, and remembers it. Your own class's buffs are left out, and nothing in combat. Drag it with Move displays; an option turns it off, another shows it outside dungeons too.

@@ -90,12 +90,31 @@ local function GroupClasses()
 	return count
 end
 
+-- One of your buffs, or nil when the game hides it. Asking for a hidden one is an error in
+-- Forever, not a secret answer: it's asked first, and the call is wrapped in case it doesn't say
+local function AuraAt(unit, i)
+	if C_Secrets then
+		if C_Secrets.ShouldAurasBeSecret then
+			local ok, hidden = pcall(C_Secrets.ShouldAurasBeSecret)
+			if not ok or hidden then return nil, true end
+		end
+		if C_Secrets.ShouldUnitAuraIndexBeSecret then
+			local ok, hidden = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, i, "HELPFUL")
+			if not ok or hidden then return nil, true end
+		end
+	end
+	local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unit, i, "HELPFUL")
+	if not ok then return nil, true end
+	return aura
+end
+
 -- The names of your buffs, or nil when the game hides them
 local function MyBuffs()
 	if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return end
 	local names = {}
 	for i = 1, 40 do
-		local aura = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
+		local aura, hidden = AuraAt("player", i)
+		if hidden then return end
 		if not aura then break end
 		if IsSecret(aura) or IsSecret(aura.name) then return end
 		names[aura.name] = true
